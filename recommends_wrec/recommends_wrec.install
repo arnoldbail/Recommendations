@@ -1,0 +1,38 @@
+<?php
+error_reporting(-1);
+$conf['error_level'] = 2;
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+?>
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the recommendations_db module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * In Drupal 7, there is no need to install schema using this hook, the schema
+ * is already installed before this hook is called.
+ *
+ * We will create a default entry in the database.
+ *
+ * @see hook_install()
+ */
+ 
+function recommendations_wrec_uninstall() {
+  variable_del('recommendations_string');
+ 
+$name = "recommends_wrec";
+db_drop_table($name);
+}
+/********************************************
+* recommends_cs
+*******************************************/
+function recommends_wrecs_install() {
+ 
+}
+
+

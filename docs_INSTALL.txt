@@ -1,0 +1,84 @@
+Steps to installation checklist:
+
+- Install Adaptivetheme and Sky sub-themes.
+
+- Install the Link module and enable.
+
+- Install the WYSIWYG module and enable it.
+
+- Recommendlates
+	- Create rcmd subdirectory in default/files 
+	  (create username subdirevtorieds off of rcmd (i.e., /drdemo2
+	- Content type->recommendlate->manage display, on export file 
+	  select "recommendlate handler"
+	- Content type->recommendlate->edit, disable all of the comment
+	  settings.
+	- Add a new field "References", check "Link title optional", set a value of 4 for the "Number of values".
+
+- Create "professor" and "student" roles. Give permissions for 
+  recommendlate   items to "professor" role. Give Advanced Help" permisssion to Professor and Student roles.
+
+- Create a user for each professor. Give professor role. Give an email
+  address that will be used when creating a professor profile.
+  
+- Create "professor" and "student" menus structure->menus=>add menu. After creating the menus, click "list items" for professor and add "Recommendations" link to point to the dashboard "recommendations". For the "student" menu add Recommendations and link to "recommendations/recommends_req" and "Email Professor" to "recommends_req/profemail".
+
+- In structure->blocks drag and drop the professor and student menus to the "Drop Down" region. Click configure for professor and check "professor" role. Do the same for the student item and check student role.
+
+- For now, content type-> recommendlate -> edit and select "hidden" for Comment Display Default. 
+
+- Go to Administration =>Configuration -> Search and metadata and check the Advanced Help box. Remember that for search or advanced help index to work, Cron must be run. In administration->cron and set the interval to 3 hours or less and then, if desired run cron manually.
+
+- Create private/username/ folder when adding an accoubt
+
+------------OLD----------------------------
+(Need to review these steps)
+
+- install zeropoint theme in 7.x drupal
+- Copy recommendations folder to ../sites/all/modules
+- Enable them in drupal admin modules
+- In admin->structures->menu create the professor and student menus.
+- In admn->structures->block, place Professor and Student menus in 
+  "dropdown menu" block.
+- In the admin->structure->content type->recommendlare node->clisck "Manage    display" tab. For the "Export file" field, "Recommendlate file handle" format.
+- Disable comments menaually for recommendlat node by going to admin->structure->content types->recommendlate node()-> In comment settings, select "closed" fr commentsedit
+
+
+- Install the Print module http://drupal.org/project/print. Follow the INSTALL.txt file instructions for print module.
+- As part of the print to pdf file follow the tcpdf install instructions.
+ (Did not install pdf. Evidently user accss to folder needed. Will look
+  at later)
+
+
+- In ../sites/all/themes/zeropoint/ is scott.bailey.jpg which is where
+  the logo resides. This is uploaded with the admin->appearance->site
+  information->custom logo field
+- In ../sites/all/themes/zeropoint/_custom is all customized themes. 
+  	The #brand has filename headerimg.css has the banner images (846x200)
+- In zeropoint/images/all themes _brand.png is the image in footer. This
+  was replaced by the mathematical symbol.
+  
+  NOTE: Only 'admin' username can add a professor or make changes to a professor other than the professor's own profile.
+
+Moving recommendations modules from smbtest to smb
+----------------------------------------------------------
+- Enable logi destination and recommendaations modules
+- Ensure the "Dr. Scott M. Baey" is a user with oughter@gmail.com and the "professor" rolwe is checked.
+- Create "Dr. Teser" user with "arnoldbail@gmail.com" and a role of "professor"
+- users arnoldbail and scottbail are administrators.
+- people->permissions tab and check 4 recommendayions node access permissions for the professor role. and check professor for recommendations reports.
+- If an upgarde was done, go to reports->status and you will see the "database updates" warnong/ Click the link to updaate the database. Put the site in maintenance mode as the instructions say. Go back to update script and hit continue. On next screen hit apply updates. A complete message will show. Then go to configuration->maintenance and take out of maintenenace mod. The status message sttill shows; but, ignore.
+- cop smbtest/sites/all/themes/zeropoint/_custom/custom-style.css to the appropriate smb directory.
+
+The screen size is fluid about 600 - 850 did for the iPad
+---------------------------------------------------
+- Layout: (custom-style.css) uncommented fluid layout
+- In appearance->theme settings, selcted fluid(custom)
+
+
+
+
+CHANGES
+--------
+07/06/2011 - Added Summary report. Made report the 
+			front page and the login destination for professor.

@@ -1,0 +1,124 @@
+<?php
+/**
+ * Implements hook_schema().
+ *
+ * Define the database tables used by this module.
+ * Remember that the easiest way to create the code for hook_schema is with
+ * the schema module:
+ * @link http://drupal.org/project/schema @endlink
+ *
+ * @see hook_schema()
+ */
+function recommends_st_schema() {
+
+  $schema['recommends_st'] = array(
+    'description' => 'Creates Student table.',
+    'fields' => array(
+      'pid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ),
+     
+      'firstname' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'First Name of the person.',
+      ),
+      'lastname' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Last Name of the person.',
+      ),
+      'initial' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Initial of the person.',
+      ),
+      's_email' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Student Email address.',
+      ),
+      's_school' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'clayton',
+        'description' => 'Student School.',
+      ),
+      's_req_date' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Date recommendation was requested.',
+      ),
+       's_master_doc' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Date when recommendations are required by.',
+      ),
+       's_comments' => array(
+        'type' => 'varchar',
+        'length' => 6000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Statement of intent, Point of view',
+      ),
+      's_prof_comments' => array(
+        'type' => 'varchar',
+        'length' => 6000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Comments made by the professor.',
+      ),
+      's_timestamp' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Timestamp of last modified.',
+      ),
+      's_prof' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor Email address.',
+      ),
+      'prefix' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Name Prefix.',
+      ),
+      'suffix' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Name Suffix.',
+      ),
+    ),
+    'primary key' => array('pid'),   
+  );
+
+  return $schema;
+}
+function recommendations_st_uninstall() {
+  variable_del('recommendations_string');
+  $name = "recommends_st";
+db_drop_table($name);
+}

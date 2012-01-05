@@ -1,0 +1,56 @@
+<?php
+
+/********************************************
+* recommendations install
+*******************************************/
+function recommendationss_install() {
+variable_set('recommends_prof_email', '');
+ 
+}
+ 
+function recommendations_uninstall() {
+  variable_del('recommends_prof_email');
+ // set in recommendations module 
+  
+  variable_del('recommends_professor');
+   variable_del('recommends_professor_email');
+   variable_del('recommends_student', '');
+  variable_del('recommends_prof_notify_last');
+   variable_del('recommends_prof_notify');
+   variable_del('recommends_alt_prof_notify');
+   variable_del('recommends_alt_prof_notify_email'); 
+   variable_del('recommends_student_notify');
+   variable_del('recommends_alt_student_notify');
+   variable_del('recommends_alt_student_notify_email');
+   
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

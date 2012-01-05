@@ -1,0 +1,1402 @@
+<?php
+error_reporting(-1);
+$conf['error_level'] = 2;
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+
+
+function recommends_prof_entry_insert($entry) {
+
+  $returp_value = NULL; 
+  
+  try {
+    $returp_value = db_insert('recommends_prof')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $returp_value;
+}
+
+
+function recommends_prof_entry_update($entry) {
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  $entry['p_timestamp']  = $timestamp;
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_prof')
+              ->fields($entry)
+              ->condition('p_pid', $entry['p_pid'])
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+function recommends_prof_entry_update_srch($entry,$search) {
+  
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_prof')
+              ->fields($entry)
+              ->condition('p_email', $search)
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+/*******************************************************
+*
+*********************************************************/
+function recommends_prof_entry_view($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_prof')
+              ->fields($entry)
+              ->condition('p_pid', $entry['p_pid'])
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+
+function recommends_prof_entry_delete($entry) {
+  db_delete('recommends_prof')
+    ->condition('p_pid', $entry['p_pid'])
+    ->execute();
+
+}
+
+function recommends_prof_entry_delete_full($entry) {
+  db_delete('recommends_prof')
+    ->condition('p_pid', $entry['p_email'])
+    ->execute();
+
+}
+
+function recommends_prof_entry_load($entry = array()) {
+  // Read all fields from the recommends_prof table.
+  $select = db_select('recommends_prof');
+  $select->fields('recommends_prof'); 
+  $select->orderby('p_name', 'ASC');
+  if (variable_get('recommends_professor') <> 'arnoldbail') {
+    $select->condition('p_email',variable_get('recommends_professor_email'), '=');
+  }
+
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_prof_entry_load_all($entry = array()) {
+  // Read all fields from the recommends_prof table.
+  $select = db_select('recommends_prof');
+  $select->fields('recommends_prof');
+  $select->orderby('p_name', 'ASC');
+  
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_prof_entry_load_srch_email($entry = array(),$search) {
+  // Read all fields from the recommends_prof table.
+  $select = db_select('recommends_prof');
+  $select->fields('recommends_prof');
+  $select->orderBy('p_name', 'ASC');
+  $select->condition('p_email', $search);
+  $select->condition('p_email',variable_get('recommends_professor_email'), '=');
+
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_prof_entry_load_req_srch_email($entry = array(),$search) {
+  // Read all fields from the recommends_prof table.
+  $select = db_select('recommends_prof');
+  $select->fields('recommends_prof');
+  $select->orderBy('p_name', 'ASC');
+  $select->condition('p_email', $search);
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_prof_advanced_list() {
+  
+  $output = '';
+
+   $select = db_select('recommends_prof', 'c');
+  
+    // Select these specific fields for the output.
+  
+  $select->addField('c', 'p_name');
+  $select->addField('c', 'p_email');
+  $select->addField('c', 'p_altemail');
+  $select->addField('c', 'p_flags');
+  $select->addField('c', 'p_tsactivity');
+  
+  $select->addField('c', 'p_timestamp');
+   if (variable_get('recommends_professor') <> 'admin') {
+    $select->condition('p_email',variable_get('recommends_professor_email'), '=');
+  }
+
+  $entries = $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  if (!empty($entries)) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', $entry);
+    }
+    // Make a table for them.
+    $header = array( t('Professor-name'), t('email'), t('Alter-email'), t('Flags'), t('Notify-TS'),  t('Timestamp'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+    
+    
+    
+  }
+  else {
+    drupal_set_message(t('No entries in the Professor Table.'));
+  }
+  return $output;
+}
+
+
+/**
+ * Implements hook_help().
+ *
+ * Show some help on each form provided by this module.
+ */
+function recommends_prof_help($path) {
+  $output = '';
+  switch ($path) {
+    case 'recommendations/recmd_prof/professors':
+      break;
+    case 'recommendations/recmd_prof/professors/advanced':
+      break;
+    case 'recommendations/recmd_prof/professors/update':
+      break;
+    case 'recommendations/recmd_prof/professors/add':
+      break;
+    case 'recommendations/recmd_prof/professors/view':
+      break;
+      case 'recommendations/recmd_prof/professors/delete':
+      break;
+  }
+  return $output;
+}
+
+/**
+ *
+ * Set up calls to drupal_get_form().
+ */
+function recommends_prof_menu() {
+  $items = array();
+
+  $items['recommendations/recmd_prof/professors'] = array( 
+    'title' => 'Professor Profiles',
+    'menu_name' => 'menu-professor',
+    'weight' => -2,
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_prof_form_view'),
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+  );
+    $items['recommendations/recmd_prof/professors/view'] = array(
+    'title' => 'View',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_prof_form_view'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -11,
+  );
+  
+  $items['recommendations/recmd_prof/professors/add'] = array(
+    'title' => 'Add',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_prof_form_add'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['recommendations/recmd_prof/professors/update'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_prof_form_update'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -9,
+  );
+   $items['recommendations/recmd_prof/professors/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_prof_form_delete'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -8,
+  );
+  $items['recommendations/recmd_prof/professors/help'] = array(
+    'title' => 'Help',
+    'page callback' => 'recommends_prof_advhelp',
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -7,
+  );
+
+  return $items;
+}
+
+
+
+/**
+ * Prepare a simple form to add an entry, with all the interesting fields.
+ */
+function recommends_prof_form_add($form, &$form_state) {
+  
+  drupal_set_title('Professor - Add');
+  
+  if (!in_array("administrator", variable_get('roles_array'))) {
+    form_set_error(" ", 'Only the administrator can add a professor profile! ');
+    return;
+  
+  }
+  
+  $form = array();
+
+  
+  $form['add']['p_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Professor Email'),
+    '#description' => t('This MUST match the Drupal profile email for the username.'),
+    '#required'  => TRUE,
+    '#size'  => 25,
+  );
+   $form['add']['p_name'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Professor Name'),
+    '#required'  => TRUE,
+    '#size'  => 20,
+  );
+   
+   $form['add']['p_onlinedescr'] = array(
+    '#type'  => 'hidden',
+    '#title' => t('Online Descrition'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['p_school'] = array(
+    '#type' => 'select',
+    '#title' => t('School'),
+    '#size' => 1,
+     '#options' => array(
+    	'Clayton State University' => t('Clayton State University'),
+  ),
+  );
+  $form['add']['p_program'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Program Title'),
+    '#size' => 25,
+  );
+  $form['add']['p_college'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School College Title'),
+    '#size' => 25,
+  );
+  $form['add']['p_position'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Position Title'),
+    '#size' => 25,
+  );
+  $form['add']['p_internal'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Internal Location'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['p_phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phone Number'),
+    '#size' => 25,
+  ); 
+  $form['add']['p_school_logo'] = array(
+    '#type' => 'file',
+    '#title' => t('School Logo'),
+    '#size' => 25,
+  );
+  $form['add']['p_school_letter'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('School Letterhead'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['p_altemail'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Alternate Email'),
+    '#size'  => 15,
+  );
+  $form['add']['p_rcmd_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Recommendlate output type '),
+    '#size' => 1,
+     '#options' => array(
+    	'H' => t('RTF/HTML'),
+    /*	'T' => t('Plain Text'),
+    	'L' => t('Latex'), */
+  ),
+    '#default_value' => "N",
+  );
+  
+  $form['add']['p_chg_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor Notification of changes '),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => "N",
+  );
+  $form['add']['p_byp_prof'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor email(online request) '),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => "N",
+  );
+  $form['add']['p_byp_stud'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student email(online request)'),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => "N",
+  );
+  $form['add']['p_sent_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student Sent Notification'),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => "N",
+  );
+  
+  $form['add']['p_tsactivity'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Notified Timestamp'),
+    '#size'  => 15,
+  );
+  
+  $form['add']['p_timestamp'] = array(
+    '#type'  => 'hidden',
+    '#title' => t('Timestamp'),
+    '#size'  => 20,
+  );
+  $form['add']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Add'),
+  );
+
+  return $form;
+}
+/*************************************************
+ * Validate function for add a profile form.
+ * 
+ * Verify file uploaded and sav path
+ *************************************************/
+function recommends_prof_form_add_validate($form, &$form_state) {
+  
+  $file = file_save_upload( 'p_school_logo' );
+  
+  
+  if ($file) {
+     $filename = $file->filename;
+    // Get the image info to get the correct extension for the uploaded file.
+    $info = image_get_info($file->uri);
+    
+    $school = str_replace( " ", "-", $form_state['input']['p_school']);
+    
+    $path= 'public://' . $school . "/" . $form_state['input']['p_name'] . "/" . $filename; 
+    
+    if (file_move($file, $path, FILE_EXISTS_REPLACE)) {
+      // Mark the file for permanent storage.
+  /*    file_set_status($file, FILE_STATUS_PERMANENT); */
+      // Update the files table.
+      drupal_write_record('files', $file, 'fid');     
+      $form_state['values']['p_school_logo'] = $file->filename;
+    }
+    else {
+      form_set_error('school_logo', t('Failed to write the uploaded file to the site files folder.'));
+    }
+  }
+
+
+}
+/**
+ * Submit handler for 'add entry' form.
+ */
+function recommends_prof_form_add_submit($form, $form_state){
+  global $user;
+
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Save the submitted entry.
+  $entry = array(
+    'p_email'     => $form_state['values']['p_email'],
+	 'p_name'     => $form_state['values']['p_name'],
+    'p_altemail'     => $form_state['values']['p_altemail'],
+     'p_flags'     => $form_state['values']['p_chg_alert'] . 			$form_state['values']['p_byp_prof'] . $form_state['values']['p_byp_stud'] . $form_state['values']['p_sent_alert'],
+     'p_tsactivity'     => $form_state['values']['p_tsactivity'],
+    'p_onlinedescr'     => $form_state['values']['p_onlinedescr'],
+    
+     'p_school' => $form_state['values']['p_school'],
+     'p_program' => $form_state['values']['p_program'],
+     'p_college' => $form_state['values']['p_college'],
+     'p_position' => $form_state['values']['p_position'],
+     'p_internal' => $form_state['values']['p_internal'],
+     'p_phone' => $form_state['values']['p_phone'],
+     'p_school_logo' => $form_state['values']['p_school_logo'],
+     'p_school_letter' => $form_state['values']['p_school_letter'],
+     
+    'p_timestamp'     => $timestamp,
+  );
+  $return = recommends_prof_entry_insert($entry);
+  if ($return) {
+    
+    drupal_set_message(t("Professor entry created for professor  @entry ", array('@entry' => print_r($entry['p_email'] . " - " . $entry['p_name']  . " - " . $entry['p_altemail'], TRUE))));
+  }
+}
+
+/**
+ * UI to update a record.
+ */
+function recommends_prof_form_update($form, &$form_state) {
+  
+  drupal_set_title('Professor - Edit');
+
+  $entries = recommends_prof_entry_load();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_prof table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->p_pid] = t(" @p_name", array(
+    '@p_pid' => $entry->p_pid,
+    '@p_email' => $entry->p_email,
+    '@p_name' => $entry->p_name,
+    '@p_altemail' => $entry->p_altemail,
+    '@p_flags' => $entry->p_flags,
+    '@p_tsactivity' => $entry->p_tsactivity,
+     '@p_onlinedescr' => $entry->p_onlinedescr,
+     
+     '@p_school' => $entry->p_school,
+     '@p_program' => $entry->p_program,
+     '@p_college' => $entry->p_college,
+     '@p_position' => $entry->p_position,
+     '@p_internal' => $entry->p_internal,
+     '@p_phone' => $entry->p_school_logo,
+     '@p_school_logo' => $entry->p_phone,
+     '@p_school_letter' => $entry->p_school_letter,
+     
+     '@p_timestamp' => $entry->p_timestamp
+    ));
+    $keyed_entries[$entry->p_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['p_pid']) ? $keyed_entries[$form_state['values']['p_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+/*  
+  $msg = "(448)This is default_entry - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>');
+*/
+  
+  
+  
+  $form['p_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 5,
+    '#default_value' => $default_entry->p_pid,
+  );
+
+  $form['p_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Professor Email'),
+    '#description' => t('The "Professor Email" address MUST match the professor"s Drupal account email address.'),
+    '#size' => 25,
+    '#default_value' => $default_entry->p_email,
+  );
+    $form['p_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Professor Name'),
+    '#size' => 25,
+    '#default_value' => $default_entry->p_name,
+  );
+   
+   $form['p_onlinedescr'] = array(
+      '#type'  => 'hidden',
+  	  '#title' => t('Online Description '),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_onlinedescr,
+  );
+  
+  $form['p_school'] = array(
+    '#type' => 'select',
+    '#title' => t('School'),
+    '#size' => 1,
+    '#default_value' => $default_entry->p_school,
+     '#options' => array(
+    	'Clayton State University' => t('Clayton State University'),
+    
+  ),
+  );
+  $form['p_program'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Program Title'),
+    '#size' => 25,
+    '#default_value' => $default_entry->p_program,
+  );
+  $form['p_college'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School College Title'),
+    '#size' => 25,
+    '#default_value' => $default_entry->p_college,
+  );
+  $form['p_position'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Position Title'),
+    '#size' => 25,
+    '#default_value' => $default_entry->p_position,
+  );
+  $form['p_internal'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Internal Location'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_internal,
+  );
+  $form['p_phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phone Number'),
+    '#size' => 25,
+    '#default_value' => $default_entry->p_phone,
+  );
+  
+  $form['p_clear_logo'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Clear logo file.'),
+  );
+  
+  $form['p_school_logo'] = array(
+    '#type' => 'file',
+    '#title' => t('School Logo'),
+    '#size' => 25,
+  );
+  
+  $form['p_school_letter'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('School Letterhead'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_school_letter,
+  );
+  
+ 
+  $form['p_altemail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Alternate Email'),
+    '#size' => 20,
+    '#default_value' => $default_entry->p_altemail,
+  );
+  $form['p_rcmd_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Recommendlate output type '),
+    '#size' => 1,
+    '#default_value' => substr($default_entry->p_flags,4,1),
+     '#options' => array(
+    	'H' => t('RTF/HTML'),
+    /*	'T' => t('Plain Text'), 
+    	'L' => t('Latex'), */
+  ),
+  );
+  $form['p_chg_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor Notification of changes '),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,0,1),
+  );
+  $form['p_byp_prof'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor email(online request) '),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,1,1),
+  );
+  $form['p_byp_stud'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student email(online request)'),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,2,1),
+  );
+  $form['p_sent_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student Sent Notification'),
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,3,1),
+  );
+  
+  $form['p_tsactivity'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Notified TS'),
+    '#size' => 15,
+    '#default_value' => $default_entry->p_tsactivity,
+  );
+   
+  $form['p_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#default_value' => $default_entry->p_timestamp,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form; 
+}
+
+/*************************************************
+ * Validate function for update (edit) form.
+ * 
+ * Verify file uploaded and sav path
+ *************************************************/
+function recommends_prof_form_update_validate($form, &$form_state) {
+ 
+  $file = file_save_upload( 'p_school_logo' );
+  $pid = $form_state['input']['p_pid'];
+
+if ($form_state['input']['p_clear_logo'] != TRUE) {  
+  
+  if ($file) {
+     $filename = $file->filename;
+    // Get the image info to get the correct extension for the uploaded file.
+    $info = image_get_info($file->uri);
+    
+    $school = str_replace( " ", "-", $form_state['input']['p_school']);
+    $path = 'public://' . $school . "/" . variable_get('recommends_professor') . "/" . $filename; 
+      
+    //Does the school directory exist? If not, make it.
+    if (!file_exists('public://' . $school . "/")) {
+      mkdir('public://' . $school . "/");
+    }
+    //Does the professor directory exist? If not,
+    if (!file_exists('public://' . $school . "/" .  variable_get('recommends_professor') . "/")) {
+      mkdir('public://' . $school . "/" .  variable_get('recommends_professor') . "/");
+    }
+    
+    if (file_move($file, $path , FILE_EXISTS_REPLACE)) {
+      // Mark the file for permanent storage.
+  /*    file_set_status($file, FILE_STATUS_PERMANENT); */
+      // Update the files table.
+      drupal_write_record('files', $file, 'fid');
+      $form_state['values']['p_school_logo'] = $file->filename;
+    }
+    else {
+      form_set_error('school_logo', t('Failed to write the uploaded file to the site files folder.'));
+    }
+  }
+}
+else {
+  $form_state['values']['p_school_logo'] = "";
+  
+}
+}
+
+/******************************************************************
+ * UI to view a record.
+ *******************************************************************/
+function recommends_prof_form_view($form, &$form_state) {
+  
+  drupal_set_title('Professor - View');
+
+  $entries = recommends_prof_entry_load();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_prof table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->p_pid] = t("@p_name", array(
+    '@p_pid' => $entry->p_pid, 
+    '@p_email' => $entry->p_email,
+    '@p_name' => $entry->p_name,
+    '@p_altemail' => $entry->p_altemail,
+    '@p_flags' => $entry->p_flags,
+    '@p_tsactivity' => $entry->p_tsactivity,
+     '@p_onlinedescr' => $entry->p_onlinedescr,
+     
+     '@p_school' => $entry->p_school,
+     '@p_program' => $entry->p_program,
+     '@p_college' => $entry->p_college,
+     '@p_position' => $entry->p_position,
+     '@p_internal' => $entry->p_internal,
+     '@p_phone' => $entry->p_phone,
+     '@p_school_logo' => $entry->p_school_logo,
+     '@p_school_letter' => $entry->p_school_letter,
+     
+     '@p_timestamp' => $entry->p_timestamp
+    ));
+    $keyed_entries[$entry->p_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['p_pid']) ? $keyed_entries[$form_state['values']['p_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+
+  $form['view']['p_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Professor Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_email,
+  );
+   $form['view']['p_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Professor Name'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_name,
+  );
+   
+   $form['view']['p_onlinedescr'] = array(
+      '#type'  => 'hidden',
+  	  '#title' => t('Online Description '),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_onlinedescr,
+  );
+  
+  $form['view']['p_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_school,
+  );
+  $form['view']['p_programl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Program Title'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_program,
+  );
+  $form['view']['p_college'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School College Title'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_college,
+  );
+  $form['view']['p_position'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Position Title'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_position,
+  );
+  $form['view']['p_internal'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Internal Location'),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_internal,
+  );
+  $form['view']['p_phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phone Number'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_phone,
+  );
+  $form['view']['p_school_logo'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School Logo'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_school_logo,
+  );
+  $form['view']['p_school_letter'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('School Letterhead'),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_school_letter,
+  );
+  $form['view']['p_altemail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Alternate Email'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_altemail,
+  );
+  $form['view']['p_rcmd_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Recommendlate output type '),
+    '#size' => 1,
+    '#default_value' => substr($default_entry->p_flags,4,1),
+    '#disabled' => TRUE,
+     '#options' => array(
+    	'H' => t('RTF/HTML'),
+    /*	'T' => t('Plain Text'), 
+    	'L' => t('Latex'), */
+  ),
+  );
+  $form['view']['p_chg_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor Notification of changes '),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,0,1),
+  );
+  $form['view']['p_byp_prof'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor email(online request) '),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,1,1),
+  );
+  $form['view']['p_byp_stud'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student email(online request)'),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,2,1),
+  );
+  $form['view']['p_sent_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student Sent Notification'),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+   '#default_value' => substr($default_entry->p_flags,3,1),
+  );
+  $form['view']['p_tsactivity'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Notified TS'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_tsactivity,
+  );
+  
+  
+  $form['view']['p_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_timestamp,
+  );
+
+  $form['view']['submit'] = array(
+    '#type' => 'hidden',
+    '#value' => t('View'),
+  );
+  return $form;
+}
+
+/******************************************************************
+ * UI to delete a record.
+ *******************************************************************/
+function recommends_prof_form_delete($form, &$form_state) {
+  
+  drupal_set_title('Professor - Delete');
+
+  $entries = recommends_prof_entry_load();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_prof table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->p_pid] = t("@p_name", array(
+    '@p_pid' => $entry->p_pid, 
+    '@p_email' => $entry->p_email,
+    '@p_name' => $entry->p_name,
+    '@p_altemail' => $entry->p_altemail,
+    '@p_flags' => $entry->p_flags,
+    '@p_tsactivity' => $entry->p_tsactivity,
+     '@p_onlinedescr' => $entry->p_onlinedescr,
+     
+     '@p_school' => $entry->p_school,
+     '@p_program' => $entry->p_program,
+     '@p_college' => $entry->p_college,
+     '@p_position' => $entry->p_position,
+     '@p_internal' => $entry->p_internal,
+     '@p_phone' => $entry->p_phone,
+     '@p_school_logo' => $entry->p_school_logo,
+     '@p_school_letter' => $entry->p_school_letter,
+     
+     '@p_timestamp' => $entry->p_timestamp
+    ));
+    $keyed_entries[$entry->p_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['p_pid']) ? $keyed_entries[$form_state['values']['p_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['delete']['p_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('p_pid'),
+    '#size' => 5,
+    '#default_value' => $default_entry->p_pid,
+  );
+
+  $form['delete']['p_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Professor Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_email,
+  );
+   $form['delete']['p_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Professor Name'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_name,
+  );
+   
+   $form['delete']['p_onlinedescr'] = array(
+      '#type'  => 'hidden',
+  	  '#title' => t('Online Description '),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_onlinedescr,
+  );
+  
+  $form['delete']['p_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_school,
+  );
+  $form['delete']['p_programl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Program Title'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_program,
+  );
+  $form['delete']['p_college'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School College Title'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_college,
+  );
+  $form['delete']['p_position'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Position Title'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_position,
+  );
+  $form['delete']['p_internal'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Internal Location'),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_internal,
+  );
+  $form['delete']['p_phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phone Number'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_phone,
+  );
+  $form['delete']['p_school_logo'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School Logo'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_school_logo,
+  );
+  $form['delete']['p_school_letter'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('School Letterhead'),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->p_school_letter,
+  );
+  $form['delete']['p_altemail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Alternate Email'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_altemail,
+  );
+  $form['delete']['p_rcmd_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Recommendlate output type '),
+    '#size' => 1,
+    '#default_value' => substr($default_entry->p_flags,4,1),
+    '#disabled' => TRUE,
+     '#options' => array(
+    	'H' => t('RTF/HTML'),
+  /*  	'T' => t('Plain Text'), 
+    	'L' => t('Latex'),   */
+  ),
+  );
+   $form['delete']['p_chg_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor Notification of changes '),
+     '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,0,1),
+  );
+  $form['delete']['p_byp_prof'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Professor email(online request) '),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,1,1),
+  );
+  $form['delete']['p_byp_stud'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student email(online request)'),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,2,1),
+  );
+  $form['delete']['p_sent_alert'] = array(
+    '#type' => 'select',
+    '#title' => t('Bypass Student Sent Notification'),
+     '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Y' => t('Yes'), 
+    	'N' => t('No'), 
+    	'T' => t('Use alt (Test)'),
+  ),
+    '#default_value' => substr($default_entry->p_flags,3,1),
+  );
+  $form['delete']['p_tsactivity'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Notified TS'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_tsactivity,
+  );
+  
+  
+  $form['delete']['p_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->p_timestamp,
+  );
+
+  $form['delete']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+/**
+ * AJAX callback handler for the p_pid select.
+ *
+ * When the p_pid changes, populates the defaults from the database in the form.
+ */
+function recommends_prof_form_update_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['p_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 'p_email', 'p_name', 'p_altemail', 'p_flags', 'p_tsactivity', 'p_onlinedescr', 'p_school', 'p_school_logo', 'p_college', 'p_podition', 'p_internal', 'p_phone', 'p_phone', 'p_school_letter', 'p_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+ /*   
+    $msg = "(712)This is form-item-#values - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form[$item]['#value'], TRUE) . '</pre>');
+*/
+  }
+  
+  return $form;
+}
+function recommends_prof_form_add_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['p_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 'p_email') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for 'update entry' form.
+ */
+function recommends_prof_form_update_submit($form, $form_state){
+  global $user;
+  
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+
+  // Save the submitted entry.
+  $entry = array(
+    'p_pid' => $form_state['values']['p_pid'],
+     'p_email' => $form_state['values']['p_email'],
+    'p_name' => $form_state['values']['p_name'],
+     'p_altemail' => $form_state['values']['p_altemail'],
+     'p_flags'     => $form_state['values']['p_chg_alert'] . 			$form_state['values']['p_byp_prof'] . $form_state['values']['p_byp_stud'] . $form_state['values']['p_sent_alert'] . $form_state['values']['p_rcmd_type'],
+     'p_tsactivity' => $form_state['values']['p_tsactivity'],
+     'p_onlinedescr' => $form_state['values']['p_onlinedescr'],
+     
+     'p_school' => $form_state['values']['p_school'],
+     'p_program' => $form_state['values']['p_program'],
+     'p_college' => $form_state['values']['p_college'],
+     'p_position' => $form_state['values']['p_position'],
+     'p_internal' => $form_state['values']['p_internal'],
+     'p_phone' => $form_state['values']['p_phone'],
+     'p_school_logo' => $form_state['values']['p_school_logo'],
+     'p_school_letter' => $form_state['values']['p_school_letter'],
+     
+     'p_timestamp' => $timestamp,
+  );
+  $count = recommends_prof_entry_update($entry);
+  drupal_set_message(t("Professor entry updated for professor  @entry ", array('@entry' => print_r( $entry['p_name'], TRUE))));
+
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_prof_form_view_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['p_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('p_pid', 'p_email', 'p_name', 'p_altemail', 'p_flags', 'p_tsactivity', 'p_onlinedescr', 'p_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'view entry' form.
+ ***************************************************************/
+function recommends_prof_form_view_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'p_pid' => $form_state['values']['p_pid'],
+     'p_email' => $form_state['values']['p_email'],
+    'p_name' => $form_state['values']['p_name'],
+     'p_altemail' => $form_state['values']['p_altemail'],
+     'p_flags'     => $form_state['values']['p_chg_alert'] . 			$form_state['values']['p_byp_prof'] . $form_state['values']['p_byp_stud'] . $form_state['values']['p_rcmd_type'],
+     
+     'p_tsactivity' => $form_state['values']['p_tsactivity'] . $form_state['values']['p_srnt_alert'],
+     'p_onlinedescr' => $form_state['values']['p_onlinedescr'],
+     'p_timestamp' => $form_state['values']['p_timestamp'],
+  );
+  $count = recommends_prof_entry_view($entry);
+   drupal_set_message(t("Professor entry for professor  @entry ", array('@entry' => print_r($entry['p_email'] . " - " . $entry['p_name']  . " - " . $entry['p_altemail'], TRUE))));
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_prof_form_delete_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['p_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('p_pid', 'p_email', 'p_name', 'p_altemail', 'p_flags', 'p_tsactivity', 'p_onlinedescr', 'p_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'delete entry' form.
+ ***************************************************************/
+function recommends_prof_form_delete_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'p_pid' => $form_state['values']['p_pid'],
+     'p_email' => $form_state['values']['p_email'],
+    'p_name' => $form_state['values']['p_name'],
+     'p_altemail' => $form_state['values']['p_altemail'],
+     'p_flags'     => $form_state['values']['p_chg_alert'] . 			$form_state['values']['p_byp_prof'] . $form_state['values']['p_byp_stud'] . $form_state['values']['p_sent_alert'] . $form_state['values']['p_rcmd_type'],
+     
+     'p_tsactivity' => $form_state['values']['p_tsactivity'],
+     'p_onlinedescr' => $form_state['values']['p_onlinedescr'],
+     'p_timestamp' => $form_state['values']['p_timestamp'],
+  );
+  $count = recommends_prof_entry_delete($entry);
+   drupal_set_message(t("Deleted professor entry for professor  @entry ", array('@entry' => print_r($entry['p_email'] . " - " . $entry['p_name']  . " - (alt) " . $entry['p_altemail'], TRUE))));
+}
+
+/*************************************************************
+ *    Display help page
+ ***************************************************************/
+function recommends_prof_advhelp(){
+  drupal_set_title('Professor - Help');
+
+  
+  $module = 'recommendations';
+  $topic = 'using-prof-profile';
+  $type = 'title';
+  
+  $output = theme('advanced_help_topic', array(
+  'module' => $module, 
+  'topic' => $topic,
+  'type' => $type,
+  ));
+  
+  return $output;
+}  
+  
+  
+  
+  
+  
+  
+  
+  

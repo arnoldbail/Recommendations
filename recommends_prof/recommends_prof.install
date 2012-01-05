@@ -1,0 +1,133 @@
+<?php
+
+ 
+function recommendations_prof_uninstall() {
+  variable_del('recommendations_string');
+ 
+$name = "recommends_prof";
+db_drop_table($name);
+}
+
+
+function recommends_prof_schema() {
+
+  $schema['recommends_prof'] = array(
+    'description' => 'Creates Professor table.',
+    'fields' => array(
+      'p_pid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ),
+       'p_email' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor Email.',
+      ),
+      'p_name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor full Name.',
+      ),
+      'p_altemail' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Alternate/test Email address.',
+      ),
+      'p_flags' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Internal use flags',
+      ),
+      'p_tsactivity' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Activity  timesatmp',
+      ),
+      'p_onlinedescr' => array(
+        'type' => 'varchar',
+        'length' => 6000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Description in online requesr',
+      ),
+      'p_school' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'School title.',
+      ),
+      'p_program' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Program title',
+      ),
+      'p_college' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'College title',
+      ),
+      'p_position' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Position title',
+      ),
+      'p_phone' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Phone',
+      ),
+      'p_school_letter' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'School letter head.',
+      ),
+      'p_internal' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Professor internal location head.',
+      ),
+      'p_school_logo' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'School logo file',
+      ),
+      
+      'p_timestamp' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Timestamp of last modified.',
+      )
+    ),
+    'primary key' => array('p_pid'), 
+  );
+
+  return $schema;
+}

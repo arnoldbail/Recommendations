@@ -1,0 +1,644 @@
+<?php
+/**
+ * @file
+ * Admin demo setup: roles, demo users and data/menus
+ *
+ */
+function recommendations_setup_menu() {
+  
+  $items = array();
+  $items['recommendations/recommendations_setup'] = array(
+    'title' => 'Setup',
+    'page callback' => 'recommendations_setup_build',
+    'type' => MENU_NORMAL_ITEM,
+    
+    'access callback' => TRUE,   
+  );
+  
+  
+  return $items;
+}
+/************************************************
+*    Create the professor and student roles
+*
+*************************************************/
+function recommendations_setup_build() {
+
+if (in_array("administrator", variable_get('roles_array'))) {
+
+  $newRoles = array('professor', 'student');
+  foreach ($newRoles as $r){
+    if(!user_role_load_by_name($r)){
+      $role = new stdClass();
+      $role->name = $r;
+      user_role_save($role);
+    }
+  }
+
+$name='drdemo';
+if (!db_query("SELECT COUNT(*) FROM {users} WHERE name = :name", array(':name' => $name))->fetchField()) {
+  // register a new user - drdemo
+$form_state = array();
+$form_state['values']['name'] = 'drdemo';
+$form_state['values']['mail'] = 'drdemo@demo.edu';
+$form_state['values']['pass']['pass1'] = 'drdemo';
+$form_state['values']['pass']['pass2'] = 'drdemo';
+$form_state['values']['role'] = 'professor';
+$form_state['values']['op'] = t('Create new account');
+drupal_form_submit('user_register_form', $form_state);
+}
+
+$name='drdemo2';
+if (!db_query("SELECT COUNT(*) FROM {users} WHERE name = :name", array(':name' => $name))->fetchField()) {
+// register a new user - drdemo2
+$form_state = array();
+$form_state['values']['name'] = 'drdemo2';
+$form_state['values']['mail'] = 'drdemo2@demo.edu';
+$form_state['values']['pass']['pass1'] = 'drdemo2';
+$form_state['values']['pass']['pass2'] = 'drdemo2';
+$form_state['values']['role'] = 'professor';
+$form_state['values']['op'] = t('Create new account');
+drupal_form_submit('user_register_form', $form_state);
+}
+
+$name='student';
+if (!db_query("SELECT COUNT(*) FROM {users} WHERE name = :name", array(':name' => $name))->fetchField()) {
+// register a new user - student
+$form_state = array();
+$form_state['values']['name'] = 'student';
+$form_state['values']['mail'] = 'student@demo.edu';
+$form_state['values']['pass']['pass1'] = 'student';
+$form_state['values']['pass']['pass2'] = 'student';
+$form_state['values']['role'] = 'student';
+$form_state['values']['op'] = t('Create new account');
+drupal_form_submit('user_register_form', $form_state);
+}
+recommendations_setup_create_custom();
+
+// Delete records before inserting
+
+$prof ='drdemo@demo.edu';
+recommendations_setup_cleanup($prof);
+
+$prof ='drdemo2@demo.edu';
+recommendations_setup_cleanup($prof);
+
+demo_prof_insert();
+demo_cnt_insert();
+demo_cp_insert();
+demo_cs_insert();
+demo_rc_insert();
+demo_st_insert();
+
+$o = '<p>The following actions were performed:</p>
+<ul>
+<li>Roles professor and studemnt were created.</li>
+<li>Users drdemo, drdemo2 and student were created and added to their respective roles.</li>
+<li>Demo student and professor data added to the database.</li>
+<li>Menus Professor and Student created. These menus should be placed in the menu bar region. In config for the professor menu check the professor role. In config for the student menu check the student role.</li>
+</ul>';
+}
+return $o;
+}
+
+/*****************************************************
+*       Create student and professor menus   
+*
+******************************************************/
+function recommendations_setup_create_custom()
+{
+
+    $menu = array();
+    $menu['menu_name'] = "menu-student";
+    $menu['title'] = "Student";
+    $menu['description'] = "The <em>Student role menu for the Recommendations application.";
+    menu_save($menu);
+    $menu['menu_name'] = "menu-professor";
+    $menu['title'] = "Professor";
+    $menu['description'] = "The <em>Professor role menu for the Recommendations application.";
+    menu_save($menu);
+
+}
+
+/*****************************************************
+*       Delete all student and professor data   
+*
+******************************************************/
+function recommendations_setup_cleanup($prof) {
+  
+  // st delete
+  db_delete('recommends_prof')
+    ->condition('p_email', $prof)
+    ->execute();
+   
+  // cs delete
+  db_delete('recommends_cs')
+    ->condition('c_prof', $prof)
+    ->execute();
+    
+    // cs delete
+  db_delete('recommends_rc')
+    ->condition('r_prof', $prof)
+    ->execute();
+  
+//  delete recommends_st_entry
+db_delete('recommends_st')
+      ->condition('s_prof', $prof)
+      ->execute();
+
+// cp delete
+  db_delete('recommends_cp')
+    ->condition('i_prof', $prof)
+    ->execute();  
+
+// cnt delete
+  db_delete('recommends_cnt')
+    ->condition('n_email', $prof)
+    ->execute();  
+  
+  
+// recommendlate node cleanup
+  
+  $title = 'BetaAlphaA%';
+  $num_deleted = db_delete('node')
+  ->condition('title', $title,'LIKE')
+  ->execute();
+
+$title = 'EpsilonGammP%';
+  $num_deleted = db_delete('node')
+  ->condition('title', $title,'LIKE')
+  ->execute();
+
+$title = 'AppleRedA%';
+  $num_deleted = db_delete('node')
+  ->condition('title', $title,'LIKE')
+  ->execute();
+
+$title = 'GrapePurpleP%';
+  $num_deleted = db_delete('node')
+  ->condition('title', $title,'LIKE')
+  ->execute();
+
+}
+
+/********************************************
+* recommends_prof
+*******************************************/
+function demo_prof_insert() {
+  // Outside of the .install file we would use drupal_write_record() to
+  // populate the database, but it cannot be used here, so we'll use
+  // db_insert().
+
+  
+    $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Add a professor entry.
+  $fields = array(
+    'p_email'    => 'drdemo@demo.edu',
+    'p_name' => 'Dr. D. H. Demo',
+    'p_altemail'     => 'drdemo@demo.edu',
+    'p_flags'     => 'YYYYH',	/* Bypass nightly email alert */
+    							/* Bypass professor email - online req*/
+    							/* Bypass student email - online  req, */
+    							/* Bypass sent norification to student */
+    							/* Recommenlate output-L=Latex,T=Text */
+     'p_tsactivity'     => $timestamp,
+    'p_onlinedescr'     => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus accumsan .
+ game',
+    'p_school'    => 'University of Demo',
+    'p_program'   => 'Mathematics Department',
+    'p_college'   => 'College College College College College College',
+    'p_position'   => 'Professor',
+    'p_phone'   => 'tel-tel-tel',
+    'p_school_letter'   => 'University University//Street Street Street//City, State Zip',
+'p_internal'   => 'building//department//University//R.C. Box// 
+City, State Zip',
+    'p_timestamp'     => $timestamp,
+  );
+  db_insert('recommends_prof')
+    ->fields($fields)
+    ->execute();
+  
+
+/********** drdemo2 *****************/
+  // Add a professor entry.
+  $fields = array(
+    'p_email'    => 'drdemo2@demo.edu',
+    'p_name' => 'Dr. D. R. Demo2',
+    'p_altemail'     => 'drdemo2@demo.edu',
+    'p_flags'     => 'YYYYH',	/* Bypass nightly email alert */
+    							/* Bypass professor email - online req*/
+    							/* Bypass student email - online  req, */
+    							/* Bypass sent norification to student */
+    							/* Recommenlate output-L=Latex,T=Text */
+     'p_tsactivity'     => $timestamp,
+    'p_onlinedescr'     => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus accumsan .
+ game',
+    'p_school'    => 'School School School',
+    'p_program'   => 'Program Program Program Program ',
+    'p_college'   => 'College College College College College College',
+    'p_position'   => 'Position Position Position ',
+    'p_phone'   => 'tel-tel-tel',
+    'p_school_letter'   => 'University of Demo// 777 Fiduciary Building//Any City, State Zip',
+    'p_internal'   => 'building//department//University//R.C. Box// 
+City, State Zip',
+    'p_timestamp'     => $timestamp,
+  );
+  db_insert('recommends_prof')
+    ->fields($fields)
+    ->execute();
+}
+
+/********************************************
+* recommends_cnt
+*******************************************/
+function demo_cnt_insert() {
+  // Outside of the .install file we would use drupal_write_record() to
+  // populate the database, but it cannot be used here, so we'll use
+  // db_insert().
+  
+    $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Add a default entry.
+  $fields = array(
+    'n_email'    => 'www.demo.edu',
+    'n_site' => 'Demo site',
+    'n_siteurl'     => 'www.goforth.com',
+    'n_username'     => 'drdemo',
+     'n_password'     => 'drdemo',
+    'n_notes'     => 'Got game',
+    'n_timestamp'     => $timestamp,
+  );
+  db_insert('recommends_cnt')
+    ->fields($fields)
+    ->execute();
+
+}
+
+/********************************************
+* recommends_cp
+*******************************************/
+function demo_cp_insert() {
+  // Outside of the .install file we would use drupal_write_record() to
+  // populate the database, but it cannot be used here, so we'll use
+  // db_insert().
+  
+    $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  $fields = array(
+    'i_course' => 'MATH 1111',
+    'i_semester' => 'Fall',
+    'i_year'     => '2011',
+    'i_coursename'     => 'College Algebra',
+    'i_timestamp'     => $timestamp,
+    'i_prof'     => 'drdemo@demo.edu',
+    'i_objective'     => 'This course is a functional approach to algebra 
+that incorporates the use of appropriate technology. 
+Emphasis will be placed on the study of functions 
+and their graphs, inequalities, and linear, quadratic, 
+piece-wise defined, rational, polynomial, exponential, 
+and logarithmic functions. Appropriate applications 
+',
+    'i_grade_a'     => '',
+    'i_grade_b'     => '',
+    'i_grade_other'     => '',
+    
+  );
+  db_insert('recommends_cp')
+    ->fields($fields)
+    ->execute();
+      
+ // Add a another course conducted.
+  $fields = array(
+    'i_course' => 'MATH 1112',
+    'i_semester' => 'Fall',
+    'i_year'     => '2011',
+    'i_coursename'     => 'Geometry and Trigonometry',
+    'i_timestamp'     => $timestamp,
+    'i_prof'     => 'drdemo@demo.edu',
+    'i_objective'     => 'A study of trigonometry including angle measurement, 
+solving triangles, fundamental trigonometric identities, 
+solving trigonometric equations, and an introduction to 
+trigonometric functions of real numbers and their graphs. 
+Also covered are the conic sections and their graphs. ',
+    'i_grade_a'     => '',
+    'i_grade_b'     => '',
+    'i_grade_other'     => '',
+    
+   
+  );
+  db_insert('recommends_cp')
+    ->fields($fields)
+    ->execute();
+ 
+ /************ drdemo2 courses *****************/
+  $fields = array(
+    'i_course' => 'MATH 4020',
+    'i_semester' => 'Spring',
+    'i_year'     => '2012',
+    'i_coursename'     => 'Concepts of Discrete Mathematics',
+    'i_timestamp'     => $timestamp,
+    'i_prof'     => 'drdemo2@demo.edu',
+    'i_objective'     => 'A study of mathematical topics characterized by discrete 
+processes. The study focuses on combinatorics, the theory 
+of graphs and trees, matrix representations, and iterative 
+algorithms. Recursive thinking and inductive processes 
+are emphasized through a variety of applications involving 
+discrete mathematical models. Deductive proof is introduced 
+through topics from logic, set theory, and graph theory, 
+and some relevant topics from the history of mathematics 
+are explored.',
+    'i_grade_a'     => '',
+    'i_grade_b'     => '',
+    'i_grade_other'     => '',
+    
+  );
+  db_insert('recommends_cp')
+    ->fields($fields)
+    ->execute();
+  
+}
+
+/**
+ * @file
+ * Install, update and uninstall functions for the recommendations student database module.
+ */
+//Student
+function demo_st_insert() {
+    $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Add a default entry.
+  $fields = array(
+    'prefix'    => 'Ms.',
+    'firstname'    => 'Alpha',
+    'initial'    => 'A.',
+    'lastname' => 'Beta',
+    'suffix'    => 'III',
+    's_email'     => 'alphabeta@demo.edu',
+    's_school'     => 'student school',
+    's_req_date'     => $timestamp,
+    's_master_doc'     => 'Master document field',
+    's_comments'     => 'Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view',
+    's_prof_comments'     => 'I have seen many examples of her talent and have long been impressed by her diligence and work ethic. I understand that Cheri is applying to the undergraduate business program at your school. I would like to recommend her for admission. 
+    
+    She had an exceptional academic performance. Out of a class of 150 students, Cheri graduated with honors in the top 10. Her above-average performance is a direct result of her hard work and strong focus. ',
+    's_timestamp'     => $timestamp,
+    's_prof'     => 'drdemo@demo.edu',
+  );
+  db_insert('recommends_st')
+    ->fields($fields)
+    ->execute();
+
+
+ // Add a student entry.
+  $fields = array(
+    'prefix'    => 'Ms.',
+    'firstname'    => 'Gamm',
+    'initial'    => 'P.',
+    'lastname' => 'Epsilon',
+    'suffix'    => 'II',
+    's_email'     => 'gammaepsilon@demo.edu',
+    's_school'     => 'student school',
+    's_req_date'     => $timestamp,
+    's_master_doc'     => 'Master document field',
+    's_comments'     => 'Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view',
+    's_prof_comments'     => 'Professor comments in student record. Professor comments in student record. Professor comments in student record. Professor comments in student record. Professor comments in student record. ',
+    's_timestamp'     => $timestamp,
+    's_prof'     => 'drdemo@demo.edu',
+  );
+  db_insert('recommends_st')
+    ->fields($fields)
+    ->execute();
+    
+/******** students for drdemo2 ************/
+  // Add a default entry.
+  $fields = array(
+    'prefix'    => 'Mr.',
+    'firstname'    => 'Red',
+    'initial'    => 'A.',
+    'lastname' => 'Apple',
+    'suffix'    => 'III',
+    's_email'     => 'redappple@demo.edu',
+    's_school'     => 'student school',
+    's_req_date'     => $timestamp,
+    's_master_doc'     => 'Master document field',
+    's_comments'     => 'Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view',
+    's_prof_comments'     => 'Professor comments in student record. Professor comments in student record. Professor comments in student record. Professor comments in student record. Professor comments in student record. ',
+    's_timestamp'     => $timestamp,
+    's_prof'     => 'drdemo2@demo.edu',
+  );
+  db_insert('recommends_st')
+    ->fields($fields)
+    ->execute();
+
+
+ // Add a student entry.
+  $fields = array(
+    'prefix'    => 'Ms.',
+    'firstname'    => 'Purple',
+    'initial'    => 'P.',
+    'lastname' => 'Grape',
+    'suffix'    => 'II',
+    's_email'     => 'purplegrape@demo.edu',
+    's_school'     => 'student school',
+    's_req_date'     => $timestamp,
+    's_master_doc'     => 'Master document field',
+    's_comments'     => 'Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view Student Statement of intent, Point of view',
+    's_prof_comments'     => 'Professor comments in student record. Professor comments in student record. Professor comments in student record. Professor comments in student record. Professor comments in student record. ',
+    's_timestamp'     => $timestamp,
+    's_prof'     => 'drdemo2@demo.edu',
+  );
+  db_insert('recommends_st')
+    ->fields($fields)
+    ->execute();
+
+}
+
+/********************************************
+* recommends_cs
+*******************************************/
+function demo_cs_insert() {
+   
+    $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Add a default entry.
+  $fields = array(
+    'c_email'    => 'alphabeta@demo.edu',
+    'c_course' => 'MATH 1111',
+    'c_semester' => 'Fall',
+    'c_year'     => '2011',
+    'c_grade'     => 'A-',
+    'c_comments'     => 'Alpha has outstanding organizational skills. She is able to successfully complete multiple tasks with favorable results despite deadline pressure. As part of a semester project, she developed an innovative collaborative novel with her classmates. This book is now being considered for publication. Cheri not only headed the project, she ensured its success by demonstrating leadership abilities that her classmates both admired and respected.',
+    'c_timestamp'     => $timestamp,
+    'c_prof'     => 'drdemo@demo.edu',
+  );
+  db_insert('recommends_cs')
+    ->fields($fields)
+    ->execute();
+
+// Secon student
+  $fields = array(
+    'c_email'    => 'gammaepsilon@demo.edu',
+    'c_course' => 'MATH 1112',
+    'c_semester' => 'Fall',
+    'c_year'     => '2011',
+    'c_grade'     => 'A',
+    'c_comments'     => 'Comment concerning student Gamma Epsilon in course 1112 Comment concerning student Gamma Epsilon in course 1112 Comment concerning student Gamma Epsilon in course 1112 Comment concerning student Gamma Epsilon in course 1112 Comment concerning student Gamma Epsilon in course 1112 Comment concerning student Gamma Epsilon in course',
+    'c_other'     => 'Other activity would be placed here.',
+    'c_timestamp'     => $timestamp,
+    'c_prof'     => 'drdemo@demo.edu',
+  );
+  db_insert('recommends_cs')
+    ->fields($fields)
+    ->execute();
+  
+  // Secon student. second course
+  $fields = array(
+    'c_email'    => 'gammaepsilon@demo.edu',
+    'c_course' => 'MATH 1111',
+    'c_semester' => 'Fall',
+    'c_year'     => '2011',
+    'c_grade'     => 'C',
+    'c_comments'     => 'This is comments made by drdem regarding the student gammaepsilon in course 1111 - college algrbra.',
+    'c_other'     => 'Other activity would be placed here.',
+    'c_timestamp'     => $timestamp,
+    'c_prof'     => 'drdemo@demo.edu',
+  );
+  
+  db_insert('recommends_cs')
+    ->fields($fields)
+    ->execute();
+    
+/******* for drdemo2 ***************/
+ // Add a default entry.
+  $fields = array(
+    'c_email'    => 'purplegrape@demo.edu',
+    'c_course' => 'MATH 4020',
+    'c_semester' => 'Spring',
+    'c_year'     => '2012',
+    'c_grade'     => 'B-',
+    'c_comments'     => 'This is comments made by drdemo2 regarding the student purplegrape in course 4020 - Concepts of Discrete Mathematics.',
+    'c_other'     => 'Other activity would be placed here.',
+    'c_timestamp'     => $timestamp,
+    'c_prof'     => 'drdemo2@demo.edu',
+  );
+  db_insert('recommends_cs')
+    ->fields($fields)
+    ->execute();
+}
+
+/********************************************
+* recommends_rc
+*******************************************/
+function demo_rc_insert() {
+ 
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Add a default entry.
+  $fields = array(
+    'r_email'    => 'alphabeta@demo.edu',
+    'r_school' => 'Missouri Institute of Technology',
+    'r_school_contact_email'     => 'registrar@georgiatech.edu',
+    'r_school_contact_postal'     => 'Office of Admissions //One Brookings Drive //PO Box 777 //St. Joseph, MO 55121-0403 //Re: Carl Schwartz',
+    'r_url'     => 'URL of recommendlate (n/a)',
+    'r_status'     => 'Open',
+    'r_sent'     => 'Not Used',
+    'r_date_due_month'    => '12',
+    'r_date_due_day'      => '15',
+    'r_date_due_year'     => '2012',
+    'r_comments'     => 'Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School ',
+    'r_program'     => 'Master Business Administration',
+    'r_timestamp'     => $timestamp,
+    'r_prof'     => 'drdemo@demo.edu',
+  );
+  db_insert('recommends_rc')
+    ->fields($fields)
+    ->execute();
+    
+/******* student for drdemo ************/
+// Add a default entry.
+  $fields = array(
+    'r_email'    => 'gammaepsilon@demo.edu',
+    'r_school' => 'University of Alabama',
+    'r_school_contact_email'     => 'registrar@alabama.edu',
+    'r_school_contact_postal'     => 'Office of Admissions //One Brookings Drive //PO Box 777 //St. Joseph, MO 55121-0403 //Re: Carl Schwartz',
+    'r_url'     => 'URL of recommendlate (n/a)',
+    'r_status'     => 'Initial',
+    'r_sent'     => 'Not Used',
+    'r_date_due_month'    => '11',
+    'r_date_due_day'      => '17',
+    'r_date_due_year'     => '2013',
+    'r_comments'     => 'Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School ',
+    'r_program'     => 'Master Business Administration',
+    'r_timestamp'     => $timestamp,
+    'r_prof'     => 'drdemo@demo.edu',
+  );
+  db_insert('recommends_rc')
+    ->fields($fields)
+    ->execute();
+
+/************ Student of drdemo2 ****************/
+ // Add a default entry.
+  $fields = array(
+    'r_email'    => 'redappple@demo.edu',
+    'r_school' => 'Mississippi State University',
+    'r_school_contact_email'     => 'registrar@msu.edu',
+    'r_school_contact_postal'     => 'Ollie Oxford //111 5th ave.//City, State Zip ',
+    'r_url'     => 'URL of recommendlate (n/a)',
+    'r_status'     => 'Open',
+    'r_sent'     => 'Not Used',
+    'r_date_due_month'    => '12',
+    'r_date_due_day'      => '15',
+    'r_date_due_year'     => '2012',
+    'r_comments'     => 'Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School ',
+    'r_program'     => 'Master Business Administration',
+    'r_timestamp'     => $timestamp,
+    'r_prof'     => 'drdemo2@demo.edu',
+  );
+  db_insert('recommends_rc')
+    ->fields($fields)
+    ->execute();
+    
+/******* student for drdemo2 ************/
+// Add a default entry.
+  $fields = array(
+    'r_email'    => 'purplegrape@demo.edu',
+    'r_school' => 'University of Texas',
+    'r_school_contact_email'     => 'registrar@ut.edu',
+    'r_school_contact_postal'     => 'Sigmund Garfield //1 Alamo Drive//City, State zip',
+    'r_url'     => 'URL of recommendlate (n/a)',
+    'r_status'     => 'Initial',
+    'r_sent'     => 'Not Used',
+    'r_date_due_month'    => '11',
+    'r_date_due_day'      => '17',
+    'r_date_due_year'     => '2013',
+    'r_comments'     => 'Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School Professor comments on School ',
+    'r_program'     => 'Master Business Administration',
+    'r_timestamp'     => $timestamp,
+    'r_prof'     => 'drdemo2@demo.edu',
+  );
+  db_insert('recommends_rc')
+    ->fields($fields)
+    ->execute();
+
+
+}
+

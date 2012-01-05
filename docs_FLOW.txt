@@ -1,0 +1,116 @@
+System Flowchart
+------------------
+		
+			  Recommendations.module
+			    (recommendations_ashboard)
+			    return theme('recommendations_mob_dashboard')
+							|
+							|
+							V
+			Recommendations.theme.inc
+			  (recommendations_mob_dashboard)
+			  	links point to:
+			  		recommendations/list/students (argument is students), 
+			  		recommendations/list/courses (argument is courses) 
+			  		recommendations/list/schools (argument is schools)
+			  				|
+			  				|
+			  				V
+			Recommendations.module
+			 (recommendations_list function)
+			 'students'--->return theme('recommendations_select_list','students'
+			 'schools'---->return theme('recommendations_select_list','schools'
+			 'courses'---->return theme('recommendations_select_list','courses'
+			 				|
+			 				|
+			 				V
+			Recommendations.theme.inc
+			 (recommendations_select_list)
+			  Builds page with studentslisted and links to function
+			  Rntry Parameters:
+			   $function
+			     students --->recommendations/recmd_st/students
+			     achools  --->recommendations/rclist
+			     courses  --->recommendations/cslist
+			     wrec     --->recommendations/recmd_wrec/wrec
+			  				|
+		____________________|________________________
+		|					|						|
+		|					|						|
+		|	  				|						V			
+		|					|			recommends_st.module
+ 		|					|		(recommends_st_form_view)
+ 		|					|		 Entry Parameters:
+ 		|					|			$s_email, $name or
+ 		}					|			variable_get('recommends_s_email') and
+ 		|					|			variable_get('recommends_name')
+ 		|					|		  
+ 		|					|
+ 		|					V
+ 		|		Recommends_wrec.module
+ 		|		 (recommends_wrec_infosheet)
+ 		|
+ 		|
+ 		V
+Recommendations.module
+(recommendations_rclist) -->return theme('recommendations_select_cslist
+(recommendations_cslist) -->return theme('recommendations_select_rclist
+		|
+		|
+		|
+		V
+Recommendations.theme.inc
+ (recommendations_select_cslist) Builds list of course for student
+   Links --->recommendations/recmd_cs/courses
+	
+		|		(recommendations_select_rclist) Builds list of achoola 
+		|		  for 	student
+   		|			Links --->recommendations/recmd_rc/schools
+		|									|
+		|									V
+		|						recommends_rc.module
+		|						(recommends_rc_form_view)
+		V						  Entry Parameters:
+recommends_cs.module				$s_mail, $name or
+(recommends_cs_form_view)			variable_get('recommends_s_email') and
+  Entry Parameters:					variable_get('recommends_name')
+	$s_email, $name or
+	variable_get('recommends_s_email') and
+	variable_get('recommends_name')
+
+
+
+In the recommendations.module _menu
+	- recommendations/ has recommendations_dashboard with MENU_NORMAL_ITEM. So the dashboard displays initially.
+	- add /list. /cslist, /rclist to _recommendations_menu with menu callback to recommendations_list, recommendations_cslist, recommendations_rclist routines in the recommendations.module
+
+	- In recommendations_dashboard is a return theme('recommendations_mob_dashboard')
+
+In RECOMMENDATIONS.THEME.INC
+	- Theme recommendations_dashboard the links go to recommendations/list/students, recommendations/list/courses, recommendations/list/schools
+	This points to the recommendations_list routine in RECOMMENDATIONS.MODULE with an argument of students, courses or schools.
+	
+	
+	
+In RECOMMENDATIONS.MODULE
+	-in recommendations_list($functions) routine and set the page titles, load all the student records from the table and returns with theme('recommendations_select_list').
+	- Meanwhile the themes were automeatically registered in the recommendations_theme routine.
+	
+**The Dashboard displays 
+
+RECOMMENDATIONS.THEME.INC
+	- In the recommendations_select_list theme build the HTML for the Student Select List and return the $Output. Links are created with a $function/email address. (i.e., students/oprah@abc.edu)
+	
+**The Student Select List is executed from the Student links in the dashboarrd (wrec, students, courses, schools)
+
+
+
+
+In RECOMMENDATIONS.MODULE
+	-in recommendations_cslist($functions) and recommendations_cslist($functions) routines  set the page titles, load all the student records from the table and returns with theme('recommendations_select_cslist') or theme('recommendations_select_rclist').
+	
+RECOMMENDATIONS.THEME.INC
+	- In the recommendations_select_cslist and recommendations_select_cslist theme build the HTML for the course or School Select List and return the $Output. Links are created with a $function/email address. (i.e., course/1112 or school/notre%dame)
+	
+** the links go to the View of each table module ehich is specified in the _menu MENU_NORMAL_ITEM item.
+

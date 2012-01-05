@@ -1,0 +1,456 @@
+<?php
+
+/**
+ * @file
+ * The module creates the recommendlate content type during the install.
+ * The body of th recommendlate is built in HTML format when a node 
+ * is created or accessed.
+ */
+
+function recommends_rcmd_menu() {
+  $items['recommendations/recommends_rcmd/recommendlate'] = array(
+    'page callback' => 'recommends_rcmd_page',
+    'access arguments' => array('access content'),
+    'title' => 'Recommendlates List',
+  );
+  return $items; 
+}
+
+/**
+ * Custom callback that builds our content and returns it to the browser.
+ *
+ * @return
+ *   a build array
+ *
+ */
+function recommends_rcmd_page() {
+  drupal_set_title('Recommendlates List - Professor ' . variable_get('recommends_professor'));
+  
+  
+  
+  $build = array();
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type AND n.status = :status  AND n.uid = :uid';
+  $result = db_query($sql,
+    array(
+      ':type' => 'recommendlate',
+      ':status' => 1,
+      ':uid' => variable_get('uid'),
+    )
+  );
+
+  // Loop through each of our recommendlate nodes and instruct node_view
+  // to use our custom "recommendlate_node_list" view.
+  // http://api.drupal.org/api/function/node_load/7
+  // http://api.drupal.org/api/function/node_view/7
+  foreach ($result as $row) {
+    $node = node_load($row->nid);
+    $build['node_list'][]= node_view($node, 'recommendlate_node_list');
+  }
+
+  return $build;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * We need to modify the default node entity info by adding a new view mode to
+ * be used in functions like node_view() or node_build_content().
+ *
+ */
+function recommends_rcmd_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['recommendlate_node_list'] = array(
+    'label' => t('Recommendlate List'),
+    'custom settings' => TRUE,
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function recommends_rcmd_field_formatter_info() {
+  return array(
+    'recommends_rcmd_export' => array(
+      'label' => t('Recommendlate Export Handle'),
+      'field types' => array('text'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ * NOTE: Don't fprget to structue->recommendlate->manage display and
+ *       set the formatter to recommendlate export handle.
+ * 
+ * @todo: We need to provide a formatter for the exports that a user is allowed to enter
+ * during node creation.
+ */
+function recommends_rcmd_field_formatter_view($object_type, $object, $field, $instance, $langcode, $items, $display) {
+/*
+$msg = "(rcmd)This is XXXXXitems  - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($items, TRUE) . '</pre>'); 
+*/
+    
+$items[0]['value'] = variable_get('recommendlate_export_file');
+$items[0]['format'] = '';
+$items[0]['safe_value'] = variable_get('recommendlate_export_file');
+
+
+  $element = array();
+  switch ($display['type']) {
+    case 'recommends_rcmd_export':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#type'] = 'markup';
+        $export = $item['safe_value'];
+        $element[$delta]['#markup'] = theme('recommendlate_node_export', array('export' => $export));
+      }
+      break;
+  }
+
+  return $element;
+}
+
+
+/**
+ * Implements hook_theme().
+ *
+ * This lets us tell Drupal about our theme functions and their arguments.
+ */
+function recommends_rcmd_theme($existing, $type, $theme, $path) {
+  return array(
+    'recommendlate_node_export' => array(
+      'variables' => array('export' => NULL),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_help().
+ */ 
+function recommends_rcmd_help($path, $arg) {
+  switch ($path) {
+    case 'recommendations/recommends_rcmd/recommendlate':
+      return "<p>" . t(
+        "The following is a list of created recommendlates.
+        You can create new nodes using the <a href='!nodeadd'>Create Recommendlate</a>.
+        Nodes that you create will be displayed here.",
+        array('!nodeadd' => url('node/add/recommendlate'))
+      ) . "</p>";
+  }
+}
+
+/**
+ * A custom theme function.
+ *
+ * By using this function to format our node-specific information, themes
+ * can override this presentation if they wish.  This is a simplifed theme
+ * function purely for illustrative purposes.
+*/ 
+function theme_recommendlate_node_export($variables) {
+ 
+ $f = variable_get('recommendlate_export_file');
+  $output = '<span style="background-export: #ccc; padding: 1em; margin-bottom: 1em; float: left; export:"><a href=./sites/default/files/' . $f . '>' . $variables['export'] . '</a></span>';
+  
+  
+  return $output;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function recommends_rcmd_form_alter(&$form, $form_state, $form_id) {
+  
+  switch ($form_id) {
+    case 'node_type_form':
+      $form['default_text'] = array(
+		  
+        '#type' => 'fieldset',
+		'#group' => 'additional_settings',
+        '#title' => 'Default text for node',
+        'node_submitted' => array (
+                    '#type' => 'textarea',
+                    '#title' => 'Default text for node',
+					'#default_value' => variable_get('default_text_' . $form['#node_type']->type, ''),
+                    '#description' => t('This text will prepopulate the body field. PHP code wrapped in &lt;?php ?&gt; tags will be evaluated.'),
+                )
+
+      );
+	  array_push($form['#submit'],"recommends_rcmd_form_submit");
+      break;
+
+    default:  
+      
+      if (! array_key_exists('body',$form)) {return;}
+ 	  $language = $form['body']['#language'];
+      if (strpos($form_id, 'node_form') && strpos(strtolower($form['#action']), '/add/') && trim($form['body'][$language][0]['#default_value']) == '') {
+		  
+        $default_text = variable_get('default_text_' . $form['type']['#value'], '');   
+		if (module_exists('php')) {
+	        $default_text = php_eval($default_text);   
+		}
+        // Replace body text with evaluated default text
+        $form['body']['und'][0]['#default_value'] = $default_text;
+        // Update node body and teaser values in the $form[#node] object
+        if (strpos($default_text, '<!--break-->') !== FALSE) {
+          list($form['body'][$language][0]['summary']['#default_value'], $form['body'][$language][0]['#default_value']) = explode('<!--break-->', $default_text, 2);
+        }
+        else {
+          $btext_array = array();
+          $x = rawurldecode(variable_get('recommendlate_wrec_student_school'));
+          
+          variable_set('recommendlate_wrec_student_school',$x);
+          $btext_array = build_body_text();
+          $default_text = $btext_array[1];
+        
+          $form['recommends_rcmd_export']['und'][0]['value']['#default_value'] = 'File is created after the Save!';
+          
+          $form['body'][$language][0]['#default_value'] = $default_text;
+          
+          $form['title']['#default_value'] = $btext_array[0] ;
+          
+        }
+		
+      }
+      break;
+  }
+  
+if ($form_id == 'recommendlate_node_form') {
+  
+  $c0 = '<div id="ClickWordList"><p><a onclick=';
+  
+  $c1 = '"window.open(this.href,';
+
+  $c2 = "'','resizable=yes,location=no,menubar=no,status=no,location=no,menubar=no,scrollbars=yes,status=no,toolbar=no,fullscreen=no,dependent=no,width=500,height=400,status'); return false";
+
+  $c3 = '" href="?q=recommendations/recmd_wrec/assist/gammaepsilon@demo.edu/Epsilon,_Gamm_P.">Recommendlate Assistant</a></div>';
+
+  
+  
+  $form['title']['#suffix'] = $c0 . $c1 . $c2 . $c3;;
+}
+}
+/***************************************************
+* Build the body text from the recommendations tables.
+* - Read the database fields and load variables
+* - build out_array based on the document type.
+****************************************************/
+
+function build_body_text() {
+
+$current_date = date("F") . " " . date("j") . ", " . date("Y");
+
+// Professor fields/Heading
+$entryp = array();
+$email = variable_get('recommends_professor_email');
+$entries = recommends_prof_entry_load_srch_email($entryp,$email);
+if (!empty($entries)) {
+	$rows = array();
+	foreach ($entries as $entry) {
+	// Sanitize the data before handing it off to the theme layer.
+	  $rows[] = array_map('check_plain',(array) $entry);
+	}
+	 
+	 $professor_name        = $rows[0]['p_name'];
+	 $professor_ext_address = $rows[0]['p_school_letter'];
+	 $professor_position    = $rows[0]['p_position']; 
+	 $professor_program     = $rows[0]['p_program'];
+	 $professor_school      = $rows[0]['p_school'];
+	 $professor_school_logo = $rows[0]['p_school_logo'];
+	 $professor_school_logo_url = "/sites/default/files/" . $professor_school . '/' . variable_get('recommends_professor') . "/" . $rows[0]['p_school_logo'];
+	  
+}
+
+//School fields
+$email = variable_get('recommendlate_student_email');
+$school = variable_get('recommendlate_wrec_student_school');
+
+$entries = recommends_rc_entry_load_rcmd($entry, $email, $school);
+if (!empty($entries)) {
+	$rows = array();
+	foreach ($entries as $entry) {
+	// Sanitize the data before handing it off to the theme layer.
+	  $rows[] = array_map('check_plain',(array) $entry);
+	}
+	for ($i = 0; $i <= sizeof($rows)-1; $i++) {
+	 
+	 $student_prefix    = $rows[$i]['prefix']; 
+	 $student_full_text    = $rows[$i]['prefix'] . " " . $rows[$i]['firstname'] . " " . $rows[$i]['initial']  . " " . $rows[$i]['lastname'] .  " " . $rows[$i]['suffix'];
+	 
+	 $student_full = $rows[$i]['lastname'] . $rows[$i]['firstname']  .  $rows[$i]['initial']  . '-' . $rows[$i]['r_school'] . '-' .$rows[$i]['r_date_due_year'];
+	 
+	 
+	 //title field in recommendlate
+	 $student_first   = $rows[$i]['firstname'];
+	 $student_pre_last = $rows[$i]['prefix']  . " " . $rows[$i]['lastname'];
+	 $student_professor_comments   = $rows[$i]['s_prof_comments'];
+	 
+	 $school_program  = $rows[$i]['r_program'];
+	 $school_contact_postal  = $rows[$i]['r_school_contact_postal'];
+	 }
+}
+
+//Course(s)
+// Get all entries in the recommends_cs table.
+  
+  $course_total = 0;
+  if ($entries = recommends_cs_entry_load_rcmd($entry,$email)) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+
+    $course_total = sizeof($rows);
+    for ($i = 0; $i <= sizeof($rows)-1; $i++) {
+    	$course_name[$i]      = $rows[$i]['i_coursename'];
+    	$course_semester[$i]  = $rows[$i]['c_semester'];
+    	$course_year[$i]      = $rows[$i]['c_year'];
+    	$course_grade[$i]     = $rows[$i]['c_grade'];
+    	$course_comments[$i]  = $rows[$i]['c_comments'];
+    	$course_objective[$i]  = $rows[$i]['i_objective'];
+
+ 		switch (substr($rows[$i]['c_grade'],0,1)) {
+    		case 'A':
+     		 $course_grade_comments[$i]  = $rows[$i]['i_grade_a'];
+     		 break;
+    		case 'B':
+      		 $course_grade_comments[$i]  = $rows[$i]['i_grade_b'];
+      		 break;
+    		default:
+      		 $course_grade_comments[$i]  = $rows[$i]['i_grade_other'];
+      		 break;
+  		}
+  	} 
+  }
+ 
+ switch (variable_get('recommends_rcmd_type')) {
+    case 'T':
+      include_once 'recommends_rcmd.text.inc';
+      break;
+    case 'L':
+      include_once 'recommends_rcmd.latex.inc'; /* initial req was student*/
+      break;
+    case 'H':
+      include_once 'recommends_rcmd.html.inc';
+      break;  
+  }
+	
+//	$rc = write_file($out_array[2],$out_array[1]);
+	
+return $out_array;
+}
+
+
+function recommends_rcmd_form_submit($form, &$form_state) {
+  $text = $form['default_text']['node_submitted']['#value'];
+  if ($text != "") {
+    variable_set('default_text_' . $form['#node_type']->type, $text);
+  }
+  else {
+    variable_del('default_text_' . $form['#node_type']->type);
+  }
+
+}
+
+function recommends_rcmd_node_view($node, $view_mode, $langcode) {
+  
+if ($node->type == 'recommendlate') {
+  $c0 = '<div id="ClickWordList"><p><a onclick=';
+  
+  $c1 = '"window.open(this.href,';
+
+$c2 = "'','resizable=yes,location=no,menubar=no,status=no,location=no,menubar=no,scrollbars=yes,status=no,toolbar=no,fullscreen=no,dependent=no,width=500,height=400,status'); return false";
+
+$c3 = '" href="?q=recommendations/recmd_wrec/assist/gammaepsilon@demo.edu/Epsilon,_Gamm_P.">Recommendlate Assistant</a></div>';
+
+  $click = $c0 . $c1 . $c2 . $c3;;
+   $node->content['prefix'] = array(
+    '#prefix' => $click, 
+    '#weight' => -10, 
+    
+  );
+}  
+  
+  
+  
+ 
+/*  
+  $msg = "(344)This is node - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($node, TRUE) . '</pre>'); 
+*/
+}
+
+
+
+
+
+/***********Used to create export file *************************
+* When the save is depressed ti save the node, this hooj is
+* invoked.
+**********************************************************
+function recommends_rcmd_node_presave($node) {
+
+  $nid = $node->nid;
+  $title = $node->title;
+  $data = $node->body['und'][0]['value'];
+  
+  $msg = "(367)This is default_entry - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>'); 
+
+////////////////////////////////////////////////////
+$wktitle = str_replace( " ", "-", $title);
+  
+  
+  if (variable_get('recommends_rcmd_type') == 'T') {
+   $destination = 'public://' . variable_get('recommends_professor') .   '/rcmdfiles/' . $wktitle . '.txt';
+   $wktitle = $wktitle . '.txt';
+   } else {
+		$destination = 'public://' . variable_get('recommends_professor') . '/rcmdfiles/' . $wktitle . '.tex';
+		$wktitle = $wktitle . '.tex';
+  }
+
+  // With all traditional PHP functions we can use the stream wrapper notation
+  // for a file as well.
+  
+  
+  $fp = fopen($destination, 'w');
+
+  // To demonstrate the fact that everything is based on streams, we'll do
+  // multiple 5-character writes to put this to the file. We could easily
+  // (and far more conveniently) write it in a single statement with
+  // fwrite($fp, $data).
+  $length = strlen($data);
+  $write_size = $length;
+  
+    $result = fwrite($fp, substr($data, 0, $write_size));
+    
+    if ($result == FALSE) {
+      drupal_set_message(t('Failed writing to the file; '), 'error');
+      fclose($fp);
+      return;
+    }
+  
+  $url = file_create_url($destination);
+  $_SESSION['write_file'] = $destination;
+ 
+  
+  
+  variable_set('recommendlate_export_path','public://');
+  
+  variable_set('recommendlate_export_file', 'rcmdfiles/' . variable_get('recommends_professor') . '/' . $wktitle);
+  
+}
+
+*/
+
+
+
+
+
+
+
+
+
+

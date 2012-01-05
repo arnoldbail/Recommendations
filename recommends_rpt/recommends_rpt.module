@@ -1,0 +1,264 @@
+<?php
+
+
+function recommends_rpt_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#summary':
+      // Here is some help text for a custom page.
+      return t('This sentence contains all the letters in the English alphabet.');
+  }
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * Since the access to our new custom pages will be granted based on
+ * special permissions, we need to define what those permissions are here.
+ * This ensures that they are available to enable on the user role
+ * administration pages.
+ */
+function recommends_rpt_permission() {
+  return array(
+  	'access summary report' => array(
+  	  'title' => t('Access summary report'),
+  	  'description' => t('Allow users to access summary report'),
+    ),
+    
+  );
+}
+
+
+function recommends_rpt_menu() {
+
+  // This is the minimum information you can provide for a menu item. This menu
+  // item will be created in the default menu.
+  $items['recommendations/recommends_rpt'] = array(
+    'title' => 'Reports',
+    'page callback' => 'recommends_rpt_description',
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+  );
+
+  $items['recommendations/recommends_rpt/summary'] = array(
+    'title' => 'Summary Report',
+    'page callback' => 'recommends_rpt_summary',
+    'access arguments' => array('access summary report'),
+  );
+
+  return $items;
+}
+
+function recommends_rpt_description() {
+  return array('#markup' => t('<div id=rpgwidth>
+
+<div id=rdentry >
+<div id=rdimg><img alt="" src=sites/all/modules/recommendations/icons/summary.png /></div>   
+<div id=rdfunc><br /><a href="@summary">Summary Reoort</a></div>
+</div>
+
+
+</div>', 
+array(
+'@summary' => url('recommendations/recommends_rpt/summary', array('absolute' => TRUE)), 
+
+)));
+}
+
+function recommends_rpt_summary() {
+
+// Build a table of schools which are due in next 7 days
+  
+   $nextweek = date("Y-m-d", strtotime("+7 days")). "T00:00:00";
+  $today = date("Y-m-d");
+  $next = substr($nextweek,0,10);
+    
+  $entries = recommends_rpt_qry_not_status($entry = array(),'Close');
+  $hold = array();
+  if (!empty($entries)) {
+  $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', $entry);
+      $due = $entry['r_date_due_year'] . "-" . $entry['r_date_due_month'] . "-" .  $entry['r_date_due_day'];
+      $m = str_pad($entry['r_date_due_month'], 2, "0", STR_PAD_LEFT);
+      $d = str_pad($entry['r_date_due_day'], 2, "0", STR_PAD_LEFT);
+      $due = $entry['r_date_due_year'] . "-" . $m . "-" .  $d;
+      
+      if ( $due <= $next ) {
+        $hold[]=$entry;
+      }
+       // Make a table for them.
+    $header = array(  t(' Name'), t('  '), t(' '), t('School'), t('Status '),  t('D '),  t('u '),  t('e '));
+    
+  }
+  
+  $output = theme('table', array('header' => $header, 'rows' => $hold)); 
+  
+  $render_array['recommends_rpt_due_near'] = array(
+   'prefix_suffix' => array(
+    '#markup' => ' ',
+    
+  ),
+  'recommends_rpt_due_next'  => array(
+    '#markup' => $output),
+    '#prefix' => '<div id=r7day><h3>Schools due in less than 7 days</h3>',
+    '#suffix' => '<br/></div>',
+
+  );
+    }
+
+//  return array('#markup' => '<p>' . t('Simple page: The quick brown fox jumps over the lazy dog.') . '</p>');
+  
+  $entry = array();
+  $entries = array();
+  
+/*  
+  $render_array['intro'] = array(
+    '#markup' => 'Professor: ' . variable_get('recommends_professor'),  // The theme function to apply to the #items
+    
+  );
+  
+*/  
+  $entries = recommends_rpt_qry_status($entry = array(),'Initial');
+  $initial = sizeof($entries);
+  
+  $entries = recommends_rpt_qry_status($entry = array(),'Open');
+  $open = sizeof($entries);
+  
+  $entries = recommends_rpt_qry_status($entry = array(),'Close');
+  $closed = sizeof($entries);
+  
+  $list[] = t("Initial - @number.", array('@number' => $initial));
+  $list[] = t("Open    - @number.", array('@number' => $open));
+  $list[] = t("Close  - @number.", array('@number' => $closed));
+  $list[] = t('Total number of school recommendations is  @number.', array('@number' => $initial + $open + $closed));
+
+  $render_array['recommends_rpt_all_status'] = array(
+    '#theme' => 'item_list',  // The theme function to apply to the #items
+    '#items' => $list,  // The list itself.
+    '#title' => t('Totals by Status'),
+  );
+  
+  // Build a psuedo-timestamp record to use in compare
+  $d1=time();   // timestamp now
+  
+  $lastweek = date("Y-m-d", strtotime("-7 days")). "T00:00:00";
+  $today = date("Y-m-d");
+  
+  $entries = recommends_rpt_qry_time_status($entry = array(),'Initial', $lastweek);
+  $initial = sizeof($entries);
+  
+  $entries = recommends_rpt_qry_time_status($entry = array(),'Open', $lastweek);
+  $open = sizeof($entries);
+  
+  $entries = recommends_rpt_qry_time_status($entry = array(),'Close', $lastweek);
+  $closed = sizeof($entries);
+  
+  
+  $list1[] = t("Initial - @number.", array('@number' => $initial));
+  $list1[] = t("Open    - @number.", array('@number' => $open));
+  $list1[] = t("Close  - @number.", array('@number' => $closed));
+  $list1[] = t('Total number of school recommendations in the last 7 days is  @number.', array('@number' => $initial + $open + $closed));
+
+  $render_array['recommends_rpt_wkly_status'] = array(
+    '#theme' => 'item_list',  // The theme function to apply to the #items
+    '#items' => $list1,  // The list itself.
+    '#title' => t('Last 7 Days New/Updated Totals by Status'),
+  );
+  
+      
+   
+  return $render_array;
+}
+
+/****************************************************
+*	Query by statatus passed
+*****************************************************/
+
+function recommends_rpt_qry_status($entry = array(),$status) {
+
+   $select = db_select('recommends_rc', 'c');
+ 
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_status', $status);
+  $select->condition('c.r_prof', variable_get('recommends_professor_email'),'=');
+
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+/****************************************************
+* Query records with a timestaamp earler than 
+* passed date by status pased.
+*****************************************************/ 
+
+function recommends_rpt_qry_time_status($entry = array(),$status, $lastweek) {
+   $select = db_select('recommends_rc', 'c');
+ 
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_status', $status);
+   $select->condition('c.r_timestamp', $lastweek,'>');
+   $select->condition('c.r_prof', variable_get('recommends_professor_email'));
+
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+/****************************************************
+* Query all records that are not status passed
+*****************************************************/ 
+function recommends_rpt_qry_not_status($entry = array(),$status) {
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'firstname');
+  
+  $select->addField('s', 'initial');  
+  
+  $select->addField('c', 'r_school');
+/*	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+*/
+  $select->addField('c', 'r_status');
+/*  $select->addField('c', 'r_sent');
+*/
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+/*
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_status', $status,'<>');
+  $select->condition('c.r_prof', variable_get('recommends_professor_email'));
+*/
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}

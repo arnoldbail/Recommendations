@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the recommendations Course student attemded.
+ */
+ 
+
+
+/**
+ * Implements hook_schema().
+ *
+ * Define the database tables used by this module.
+ * Remember that the easiest way to create the code for hook_schema is with
+ * the schema module:
+ * @link http://drupal.org/project/schema @endlink
+ *
+ * @see hook_schema()
+ */
+function recommends_cs_schema() {
+
+  $schema['recommends_cs'] = array(
+    'description' => 'Creates Course table.',
+    'fields' => array(
+      'c_pid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ),
+       'c_email' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Student Email.',
+      ),
+      'c_course' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Course taken.',
+      ),
+      'c_semester' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Semester course taken.',
+      ),
+      'c_year' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => False,
+        'default' => '',
+        'description' => 'Year course taken.',
+      ),
+      'c_grade' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Grade.',
+      ),
+      'c_comments' => array(
+        'type' => 'varchar',
+        'length' => 3000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Comment concerning student.',
+      ),
+      'c_other' => array(
+        'type' => 'varchar',
+        'length' => 3000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Other activity',
+      ),
+      'c_timestamp' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Timestamp of last modified.',
+      ),
+      'c_prof' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor Email.',
+      ),
+    ),
+    'primary key' => array('c_pid'), 
+  );
+
+  return $schema;
+}
+
+function recommendations_cs_uninstall() {
+  variable_del('recommendations_string');
+ 
+$name = "recommends_cs";
+db_drop_table($name);
+}

@@ -1,0 +1,1015 @@
+<?php
+error_reporting(-1);
+$conf['error_level'] = 2;
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+
+
+function recommends_cs_entry_insert($entry) {
+  $return_value = NULL;
+  try {
+    $return_value = db_insert('recommends_cs')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
+}
+
+
+function recommends_cs_entry_update($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_cs')
+              ->fields($entry)
+              ->condition('c_pid', $entry['c_pid'])
+              ->condition('c_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+/*******************************************************
+*
+*********************************************************/
+function recommends_cs_entry_view($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_cs')
+              ->fields($entry)
+              ->condition('c_pid', $entry['c_pid'])
+              ->condition('c_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+
+function recommends_cs_entry_delete($entry) {
+  db_delete('recommends_cs')
+    ->condition('c_pid', $entry['c_pid'])
+    ->condition('c_prof', variable_get('recommends_professor_email'))
+    ->execute();
+
+}
+
+function recommends_cs_entry_delete_full($email) {
+  db_delete('recommends_cs')
+    ->condition('c_email', $email)
+    ->condition('c_prof', variable_get('recommends_professor_email'))
+    ->execute();
+
+}
+
+function recommends_cs_entry_load($entry = array()) {
+  // Read all fields from the recommends_cs table.
+  $select = db_select('recommends_cs', 'recommends_st');
+  $select->fields('recommends_st');
+  $select->condition('c_prof', variable_get('recommends_professor_email'));
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value); 
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_cs_entry_load_mob($entry = array(),$search) {
+  // Read all fields from the recommends_cs table.
+  $select = db_select('recommends_cs', 'recommends_st');
+  $select->fields('recommends_st');
+  $select->condition('c_email', $search);
+  $select->condition('c_prof', variable_get('recommends_professor_email'));
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value); 
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_cs_entry_load_mob_item($entry = array(),$search,$course,$semester,$year) {
+  // Read all fields from the recommends_cs table.
+  $select = db_select('recommends_cs', 'recommends_st');
+  $select->fields('recommends_st');
+  $select->condition('c_email', $search);
+  $select->condition('c_course', $course);
+  $select->condition('c_semester', $semester);
+  $select->condition('c_year', $year);
+  $select->condition('c_prof', variable_get('recommends_professor_email'));
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value); 
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+
+function recommends_cs_entry_load_jst($entry = array(),$search) {
+   $select = db_select('recommends_cs', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.c_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('c', 'c_pid');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'initial');
+  $select->addField('c', 'c_email');
+  $select->addField('c', 'c_course');
+  $select->addField('c', 'c_semester');
+  $select->addField('c', 'c_year');
+  $select->addField('c', 'c_grade');
+  $select->addField('c', 'c_comments');
+  $select->addField('c', 'c_other');
+  $select->addField('c', 'c_timestamp');
+  $select->addField('c', 'c_prof');
+  $select->condition('c.c_email', $search);
+  $select->condition('c.c_prof', variable_get('recommends_professor_email'));
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+
+function recommends_cs_entry_load_rcmd($entry = array(),$search) {
+   $select = db_select('recommends_cs', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_cp', 's', 'c.c_course = s.i_course');
+    // Select these specific fields for the output.
+ 
+  $select->addField('s', 'i_course');
+  $select->addField('s', 'i_coursename');
+  $select->addField('s', 'i_objective');
+  $select->addField('s', 'i_grade_a');
+  $select->addField('s', 'i_grade_b');
+  $select->addField('s', 'i_grade_other');
+  $select->addField('c', 'c_email');
+  $select->addField('c', 'c_course');
+  $select->addField('c', 'c_semester');
+  $select->addField('c', 'c_year');
+  $select->addField('c', 'c_grade');
+  $select->addField('c', 'c_comments');
+  $select->addField('c', 'c_other');
+  $select->addField('c', 'c_timestamp');
+  $select->addField('s', 'i_prof');
+  $select->condition('c.c_email', $search);
+  $select->condition('i_prof', variable_get('recommends_professor_email'));
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+
+function recommends_cs_advanced_list() {
+  drupal_set_title('Courses Enrolled');
+  
+  $output = '';
+
+   $select = db_select('recommends_cs', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.c_email = s.s_email');
+    // Select these specific fields for the output.
+  
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+/*  $select->addField('s', 'initial'); */
+  $select->addField('c', 'c_email');
+  $select->addField('c', 'c_course');
+  $select->addField('c', 'c_semester');
+  $select->addField('c', 'c_year');
+  $select->addField('c', 'c_grade');
+  $select->addField('c', 'c_timestamp');
+  $select->condition('c_prof', variable_get('recommends_professor_email'));
+  $select->orderBy('s.lastname', 'ASC');
+
+  $entries = $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  if (!empty($entries)) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', $entry);
+    }
+    // Make a table for them.
+    $header = array( t('  '), t('Name'), t('Email'), t('Course'),  t('Semester'),  t('Year'),  t('Grade'),  t('Timestamp'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries in the Course Table.'));
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_help().
+ *
+ * Show some help on each form provided by this module.
+ */
+function recommends_cs_help($path) {
+  $output = '';
+  switch ($path) {
+    case 'recommendations/recmd_cs/courses':
+      break;
+    case 'recommendations/recmd_cs/courses/update':
+      break;
+    case 'recommendations/recmd_cs/courses/add':
+      break;
+    case 'recommendations/recmd_cs/courses/view':
+      break;
+    case 'recommendations/recmd_cs/courses/delete':
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Set up calls to drupal_get_form() for all our example cases.
+ */
+function recommends_cs_menu() {
+  $items = array();
+
+  
+    $items['recommendations/recmd_cs/courses'] = array(
+    'title' => 'Courses Enrolled',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cs_form_view'),
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+    'weight' => -12,
+  );
+  $items['recommendations/recmd_cs/courses/view'] = array(
+    'title' => 'View',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cs_form_view'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -11,
+  );
+  
+  $items['recommendations/recmd_cs/courses/add'] = array(
+    'title' => 'Add',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cs_form_add'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['recommendations/recmd_cs/courses/update'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cs_form_update'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -9,
+  );
+   $items['recommendations/recmd_cs/courses/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cs_form_delete'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -8,
+  );
+  $items['recommendations/recmd_cs/courses/help'] = array(
+    'title' => 'Help',
+    'page callback' => 'recommends_cs_advhelp',
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -7,
+  );
+
+  return $items;
+}
+
+/**
+ * Render a list of entries in the database.
+ */
+function recommends_cs_list() {
+  $output = '';
+
+  // Get all entries in the recommends_cs table.
+  if ($entries = recommends_cs_entry_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array(t('Id '), t('Email '),  t('Crs'),  t('Year'),  t('Gr '),  t(' Comments'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+
+/**
+ * Prepare a simple form to add an entry, with all the interesting fields.
+ */
+function recommends_cs_form_add($form, &$form_state) {
+  
+  drupal_set_title('Enrolled - Add');
+  
+   $name = variable_get('recommends_name');
+   $s_email = variable_get('recommends_s_email');
+   
+  
+  
+    $form = array(
+    '#prefix' => '<div id="addform">',
+    '#suffix' => '</div>',
+  );
+
+  
+  $form['add'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+ $form['add']['c_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('*Student Email'),
+     '#disabled' => TRUE,
+    '#size'  =>25,
+    '#default_value' => $s_email,
+     );
+   $form['add']['c_course'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Student Course/Activity'),
+    '#required'  => TRUE,
+    '#size'  => 15,
+  );
+  $form['add']['c_semester'] = array(
+    '#type' => 'select',
+    '#title' => t('Semester '),
+    '#size' => 1,
+     '#options' => array(
+    	'Fall' => t('Fall'), 
+    	'Spring' => t('Spring'),
+    	'Summer' => t('Summer'),
+  ),
+  );
+  
+   $form['add']['c_year'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Year'),
+    '#required'  => TRUE,
+    '#size'  => 15,
+  );
+   $form['add']['c_grade'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Grade'),
+    '#size'  => 15,
+  );
+   $form['add']['c_other'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('Describe (if other)'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['c_comments'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('Professor comments'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['c_timestamp'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('timestamp'),
+    '#size'  => 20,
+  );
+  $form['add']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Add'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for 'add entry' form.
+ */
+function recommends_cs_form_add_submit($form, $form_state){
+  global $user;
+
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Save the submitted entry.
+  $entry = array(
+    'c_email'      => $form_state['values']['c_email'],
+	'c_course'     => $form_state['values']['c_course'],
+	'c_semester'   => $form_state['values']['c_semester'],
+    'c_year'       => $form_state['values']['c_year'],
+    'c_grade'      => $form_state['values']['c_grade'],
+    'c_comments'   => $form_state['values']['c_comments'],
+    'c_other'      => $form_state['values']['c_other'],
+    'c_prof'       => variable_get('recommends_professor_email'),
+    'c_timestamp'     => $timestamp,
+  );
+  
+    variable_set('recommends_s_email',$form_state['values']['c_email']);
+    $course = str_replace( "_", " ", $form_state['values']['c_course']);
+    variable_set('recommends_course',$course);
+    variable_set('recommends_semester',$form_state['values']['c_semester']);
+    variable_set('recommends_year',$form_state['values']['c_year']);
+  
+  $return = recommends_cs_entry_insert($entry);
+  if ($return) {
+    
+    drupal_set_message(t("Course entry created for student  @entry ", array('@entry' => print_r($entry['c_email'] . " - " . $entry['c_course']  . $entry['c_semester']  . " - " . $entry['c_year'], TRUE))));
+    drupal_goto('recommendations/list/courses');
+  }
+}
+
+/**
+ * UI to update a record.
+ */
+function recommends_cs_form_update($form, &$form_state) {
+  
+  drupal_set_title('Enrolled - Edit');
+  
+  $name = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+  $course = variable_get('recommends_course');
+  $semester = variable_get('recommends_semester');
+  $year = variable_get('recommends_year');
+  
+  $form = array(
+    '#prefix' => '<div id="updateform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry1 = array();
+  $search = $s_email;
+  $entries = recommends_cs_entry_load_mob_item($entry1,$search,$course,$semester,$year);
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_cs table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->c_pid] = t("@c_course @c_semester @c_year", array(
+    '@c_pid'    => $entry->c_pid,
+    '@c_email'  => $entry->c_email,
+    '@c_course' => $entry->c_course,
+    '@c_semester' => $entry->c_semester,
+    '@c_year'   => $entry->c_year,
+    '@c_grade'  => $entry->c_grade,
+    '@c_comments' => $entry->c_comments,
+    '@c_other' => $entry->c_other,
+    '@c_timestamp' => $entry->c_timestamp
+    ));
+    $keyed_entries[$entry->c_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['c_pid']) ? $keyed_entries[$form_state['values']['c_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['edit'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+  $form['c_pid'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#title' => t('Choose entry to edit'),
+    '#default_value' => $default_entry->c_pid,
+    '#ajax' => array(
+      'wrapper' => 'updateform',
+      'callback' => 'recommends_cs_form_update_callback',
+    ),
+  );
+  
+  $form['c_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 25,
+    '#default_value' => $default_entry->c_pid,
+  );
+
+  $form['c_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#default_value' => $default_entry->c_email,
+  );
+    $form['c_course'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Course/Activity'),
+    '#size' => 15,
+    '#default_value' => $default_entry->c_course,
+  );
+  $form['c_semester'] = array(
+    '#type' => 'select',
+    '#title' => t('Semester '),
+    '#size' => 1,
+     '#options' => array(
+    	'Fall' => t('Fall'), 
+    	'Spring' => t('Spring'),
+    	'Summer' => t('Summer'),
+  ),
+  );
+   $form['c_year'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Year'),
+    '#size' => 10,
+    '#default_value' => $default_entry->c_year,
+  );
+   $form['c_grade'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Grade'),
+    '#size' => 10,
+    '#default_value' => $default_entry->c_grade,
+  );
+   $form['c_other'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Describe (if other)'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->c_other,
+  );
+  $form['c_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Professor comments'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->c_comments,
+  );
+  $form['c_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#default_value' => $default_entry->c_timestamp,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+/******************************************************************
+ * UI to view a record.
+ *******************************************************************/
+function recommends_cs_form_view($form, &$form_state, $s_email=NULL,$name=NULL,$course=NULL,$semester=NULL,$year=NULL) {
+  
+  drupal_set_title('Enrolled - View');
+  
+ if (!empty($s_email)) {
+    $name = str_replace( "_", " ", $name);
+    variable_set('recommends_name',$name);
+    variable_set('recommends_s_email',$s_email);
+    $course = str_replace( "_", " ", $course);
+    variable_set('recommends_course',$course);
+    variable_set('recommends_semester',$semester);
+    variable_set('recommends_year',$year);
+    
+  } else {
+      $name = variable_get('recommends_name');
+      $s_email = variable_get('recommends_s_email');
+      $course = variable_get('recommends_course');
+      $semester = variable_get('recommends_semester');
+      $year = variable_get('recommends_year');
+  }
+  
+  $course = str_replace( "_", " ",$course);
+/*  
+  $msg = "(517)This is variable_get recommends_s_email - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r(variable_get('recommends_s_email'), TRUE) . '</pre>'); 
+*/
+  
+  $form = array(
+    '#prefix' => '<div id="viewform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry1 = array();
+  $search = $s_email;
+  $entries = recommends_cs_entry_load_mob_item($entry1,$search,$course,$semester,$year);
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_cs table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->c_pid] = t("@c_course @c_semester @c_year", array(
+    '@c_pid'    => $entry->c_pid, 
+    '@c_email'  => $entry->c_email,
+    '@c_course' => $entry->c_course,
+    '@c_semester' => $entry->c_semester,
+    '@c_year'   => $entry->c_year,
+    '@c_grade'  => $entry->c_grade,
+    '@c_comments' => $entry->c_comments,
+    '@c_other' => $entry->c_other,
+    '@c_timestamp' => $entry->c_timestamp
+    ));
+    $keyed_entries[$entry->c_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['c_pid']) ? $keyed_entries[$form_state['values']['c_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['view'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+ /*   '#title' => variable_get('recommends_professor'), */
+  );
+  $form['view']['c_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid '),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_pid,
+  );
+
+  $form['view']['c_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_email,
+  );
+   $form['view']['c_course'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Course/Activity'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_course,
+  );
+  $form['view']['c_semester'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Semester'),
+    '#size' => 6,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_semester,
+  );
+   $form['view']['c_year'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Year'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_year,
+  );
+   $form['view']['c_grade'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Grade'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_grade,
+  );
+   $form['view']['c_other'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Describe (if other)'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->c_other,
+  );
+  $form['view']['c_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Professor comments'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->c_comments,
+  );
+  $form['view']['c_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_timestamp,
+  );
+
+  $form['view']['submit'] = array(
+    '#type' => 'hidden',
+    '#value' => t('View'),
+  );
+  return $form;
+}
+
+/******************************************************************
+ * UI to delete a record.
+ *******************************************************************/
+function recommends_cs_form_delete($form, &$form_state) {
+  
+  drupal_set_title('Enrolled - Delete');
+  
+  $name = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+  $course = variable_get('recommends_course');
+  $semester = variable_get('recommends_semester');
+  $year = variable_get('recommends_year');
+  $form = array(
+    '#prefix' => '<div id="deleteform">',
+    '#suffix' => '</div>',
+  );
+  
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_cs_entry_load_mob_item($entry,$search,$course,$semester,$year);
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_cs table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->c_pid] = t("@c_course @c_semester @c_year", array(
+    '@c_pid'    => $entry->c_pid, 
+    '@c_email'  => $entry->c_email,
+    '@c_course' => $entry->c_course,
+    '@c_semester' => $entry->c_semester,
+    '@c_year'   => $entry->c_year,
+    '@c_grade'  => $entry->c_grade,
+    '@c_comments' => $entry->c_comments,
+    '@c_other' => $entry->c_other,
+    '@c_timestamp' => $entry->c_timestamp
+    ));
+    $keyed_entries[$entry->c_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['c_pid']) ? $keyed_entries[$form_state['values']['c_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['delete'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+  
+  $form['delete']['c_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_pid,
+  );
+
+  $form['delete']['c_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_email,
+  );
+   $form['delete']['c_course'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Course/Activity'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_course,
+  );
+  $form['delete']['c_semester'] = array(
+    '#type' => 'select',
+    '#title' => t('Semester '),
+    '#disabled' => TRUE,
+    '#size' => 1,
+     '#options' => array(
+    	'Fall' => t('Fall'), 
+    	'Spring' => t('Spring'),
+    	'Summer' => t('Summer'),
+  ),
+  );
+   $form['delete']['c_year'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Year'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_year,
+  );
+   $form['delete']['c_grade'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Grade'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_grade,
+  );
+   $form['delete']['c_other'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Describe (if other)'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->c_other,
+  );
+  $form['delete']['c_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Professor comments'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->c_comments,
+  );
+  $form['delete']['c_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->c_timestamp,
+  );
+
+  $form['delete']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+/**
+ * AJAX callback handler for the c_pid select.
+ *
+ * When the c_pid changes, populates the defaults from the database in the form.
+ */
+function recommends_cs_form_update_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['c_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 'c_email', 'c_course', 'c_semester', 'c_year', 'c_grade', 'c_other', 'c_comments', 'c_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+function recommends_cs_form_add_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['c_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 's_email') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for 'update entry' form.
+ */
+function recommends_cs_form_update_submit($form, $form_state){
+  global $user;
+  
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+
+  // Save the submitted entry.
+  $entry = array(
+    'c_pid'    => $form_state['values']['c_pid'],
+    'c_email'  => $form_state['values']['c_email'],
+    'c_course' => $form_state['values']['c_course'],
+    'c_semester' => $form_state['values']['c_semester'],
+    'c_year'   => $form_state['values']['c_year'],
+    'c_grade'  => $form_state['values']['c_grade'],
+    'c_comments' => $form_state['values']['c_comments'],
+    'c_other' => $form_state['values']['c_other'],
+    'c_timestamp' => $timestamp,
+  );
+  $count = recommends_cs_entry_update($entry);
+  drupal_set_message(t("Course entry updated for student  @entry ", array('@entry' => print_r($entry['c_email'] . " - " . $entry['c_course']  . $entry['c_semester'] . " - " . $entry['c_year'], TRUE))));
+  drupal_goto('recommendations/list/courses');
+
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_cs_form_view_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['c_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('c_pid', 'c_email', 'c_course', 'c_semester', 'c_year', 'c_grade', 'c_other', 'c_comments', 'c_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'view entry' form.
+ ***************************************************************/
+function recommends_cs_form_view_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'c_pid'    => $form_state['values']['c_pid'],
+     'c_email' => $form_state['values']['c_email'],
+    'c_course' => $form_state['values']['c_course'],
+    'c_semester' => $form_state['values']['c_semester'],
+     'c_year'  => $form_state['values']['c_year'],
+     'c_grade' => $form_state['values']['c_grade'],
+     'c_comments' => $form_state['values']['c_comments'],
+     'c_other' => $form_state['values']['c_other'],
+     'c_timestamp' => $form_state['values']['c_timestamp'],
+  );
+  
+ 
+    variable_set('recommends_s_email',$form_state['values']['c_email']);
+    $course = str_replace( "_", " ", $form_state['values']['c_c_course']);
+    variable_set('recommends_course',$course);
+    variable_set('recommends_semester',$form_state['values']['c_semester']);
+    variable_set('recommends_year',$form_state['values']['c_year']);
+  
+  $count = recommends_cs_entry_view($entry);
+   drupal_set_message(t("Course entry for student  @entry ", array('@entry' => print_r($entry['c_email'] . " - " . $entry['c_course']  . $entry['c_semester'] . " - " . $entry['c_year'], TRUE))));
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_cs_form_delete_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['c_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('c_pid', 'c_email', 'c_course', 'c_semester', 'c_year', 'c_grade', 'c_other', 'c_comments', 'c_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'delete entry' form.
+ ***************************************************************/
+function recommends_cs_form_delete_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'c_pid'    => $form_state['values']['c_pid'],
+    'c_email'  => $form_state['values']['c_email'],
+    'c_course' => $form_state['values']['c_course'],
+    'c_semester' => $form_state['values']['c_semester'],
+    'c_year'   => $form_state['values']['c_year'],
+    'c_grade'  => $form_state['values']['c_grade'],
+    'c_comments' => $form_state['values']['c_comments'],
+    'c_other' => $form_state['values']['c_other'],
+    'c_timestamp' => $form_state['values']['c_timestamp'],
+  );
+  $count = recommends_cs_entry_delete($entry);
+   drupal_set_message(t("Deeleted course entry for student  @entry ", array('@entry' => print_r($entry['c_email'] . " - " . $entry['c_course'] . $entry['c_semester']  . " - " . $entry['c_year'], TRUE))));
+   drupal_goto('recommendations/list/courses');
+}
+
+
+/*************************************************************
+ *    Display help page
+ ***************************************************************/
+function recommends_cs_advhelp(){
+  drupal_set_title('Conducted Courses - Help');
+
+  
+  $module = 'recommendations';
+  $topic = 'using-student-enrolled';
+  $type = 'title';
+  
+  $output = theme('advanced_help_topic', array(
+  'module' => $module, 
+  'topic' => $topic,
+  'type' => $type,
+  ));
+  
+  return $output;
+}  
+
+
+
+
+
+
+
+
+

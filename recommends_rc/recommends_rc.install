@@ -1,0 +1,125 @@
+<?php
+
+
+
+
+function recommends_rc_schema() {
+
+  $schema['recommends_rc'] = array(
+    'description' => 'Creates Course table.',
+    'fields' => array(
+      'r_pid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ),
+       'r_email' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Student Email.',
+      ),
+      'r_school' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'School/Business college.',
+      ),
+      'r_school_contact_email' => array(
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Contact email address.',
+      ),
+      'r_school_contact_postal' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'School contact postal address.',
+      ),
+      'r_url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'URL of Recommendlate.',
+      ),
+      'r_status' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Recommendation completyed Y/N.',
+      ),
+      'r_sent' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Recommendation sent - Y/N.',
+      ),
+      'r_date_due_month' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'onth Recommendation due.',
+      ),
+      'r_date_due_day' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Day Recommendation due.',
+      ),
+      'r_date_due_year' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Year Recommendation due.',
+      ),
+      'r_comments' => array(
+        'type' => 'varchar',
+        'length' => 6000,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor comments',
+      ),
+      'r_program' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Program/Position.',
+      ),
+      'r_timestamp' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Timestamp',
+      ),
+      'r_prof' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor Email.',
+      ),
+    ),
+    'primary key' => array('r_pid'), 
+  );
+
+  return $schema;
+}
+function recommendations_rc_uninstall() {
+  variable_del('recommendations_string');
+ 
+$name = "recommends_rc";
+db_drop_table($name);
+}

@@ -1,0 +1,54 @@
+<ol>
+<li>The admin adds the professor to the system; creates a skeleton professor  profile and notifies the professor of the username/password.</li>
+
+<li><u>Update the Professor profile</u> The professor Profile is accessed by going to the dashboard and click 'Professor Profile'. See   
+
+<a href=?q=help/recommendations/using-prof-profile&popup=1>Using the Professor Profile</a> 
+
+
+section for field descriptions and How-to instructions. The updated fields will be used later when the professor begins to write the student recommendation to a school (Recommendlate).</li>
+
+<li><u>Adding a conducted course</u> A Course Conducted record must be added for each course that is conducted by the professor. The fields are described in
+
+<a href=?q=help/recommendations/using-prof-conducted&popup=1>Using the Course Conducted</a>
+
+
+'Using the Course Conducted' section. It contains the course number. title, semester, year and additional fields that will be used when creating the recommendation. (course objevtives, Student Grade charactereistics. </li>
+
+<li><u>Student Online request</u></li>
+
+<ul>
+<li>After the student has requested of the professor a recommendation, an email is sent to the student containing a username and password.</li>
+<li>The student logs into the recommendlate site and selects the professor and whther the request is a first time request or an add schoolto a previous request. A series of screens then guidfe the student to enter school, contact and courses enrolled which were conducted by the professor.</li>
+<li>When the student selects 'Finish' the information is stored and email notifications are sent to the professsor and student with the information enyered. For adding a school, the information is only the added schools. The professor and student are sent email notifications.</li>
+<li>The information entered is stored in the Students table, Course Enrolled table and the Schools table. These tables are maintained separately. See 'Database Managemnt' section.</li>
+</ul>
+
+<li><u>Writing a Recommendation to a School</u><li>
+
+<ul>
+<li>An Infosheet can be displayed for each student who has completed the request. It contains all of the student's information in a concise readable structure. This can be used as a reference during the writing period.</li>
+<li>On the Infosheet for the student are the schools which the student has indicated to send the recommendation. In each schoool is a "Create Recommendlate" or a "Node/xx" link. A "Node/xx" is an existing recommendlate for the student/school.</li>
+<li>When "Create a Recommendlate" is depressed, a page appears in a formated structure which is a "template" of all the data entered and includes courses taken, grade, comments, objectives, school contact, etc.. NOTE: That there is a setting in the profile to output a "Text" or "Latex" document.</li>
+<li>The document can be changed/altered as would any text document. When "Save" is depressed the document is saved and now an "Export File" is now designated. This link will download the file.</li>
+<li>You can, at any time, access the existing recommendlate (node) through the Infosheet or "Recommendlates" can be clicked on the dashboard to get all recommendlates that exist.</li>
+<li>Additionally, the professor will go to the "Student" table (See the "Managing the Database" section, and change the status of the request. They are: (Initial Entry, Open, Sent, Closed).</li>
+</ul>
+<li><u>Summary/due report </u></li>
+<ul>
+<li>"Schools due in less than 7 days" indicate the recommendations that are becoming due for any of the professor's students.</li>  
+<li>"Totals by Status" five the totals of all recommendations ay status (Initial Entry, Open, Closed, Totals).</li>
+<li>"Last 7 Days New/Updated Totals by Status" (Initial Entry, Open, Closed, Totals.</li>
+</ul>
+<li><u>Contacts</u> The recommendation process often includes various site lookup/retrieval to acquire the school contact information. The student often doesn't have that information. The "Contacts" function allows a central location easy addin and retrieval of url, username and password for these sites.</li>
+
+<li><u>Database Management</u> The following tables are viewable and modifiable (add, update, delete) by the professor. See their individual sections for detail.</li>
+<ul>
+<li>Student Information includes minimal student contact information and professor comments.</li>
+<li>Courses Enrolled Information includes when and grade/comments that are added by the profesor.</li>
+<li>Schools Requested Information  includes all the schools requested, date and contact information for each.</li>
+<li>Professor Proile include all professor contact and description information and letterhead information.</li>
+<li>Courses Conducted includes course date, objectives, grade characteristics for that course.</li>
+<li>Contact Information includes sites required by schools to retrieve contact information and the ability to add user/password and notes.</li>
+</ul>
+</ol>  

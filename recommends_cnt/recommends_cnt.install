@@ -1,0 +1,73 @@
+<?php
+
+function recommends_cnt_schema() {
+
+  $schema['recommends_cnt'] = array(
+    'description' => 'Creates Contact table.',
+    'fields' => array(
+      'n_pid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ),
+       'n_email' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor Email.',
+      ),
+      'n_site' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Site Name.',
+      ),
+      'n_siteurl' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Site URL.',
+      ),
+      'n_username' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Username',
+      ),
+      'n_password' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Password.',
+      ),
+      'n_notes' => array(
+        'type' => 'varchar',
+        'length' => 6000,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Notes.',
+      ),
+      'n_timestamp' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Timestamp of last modified.',
+      )
+    ),
+    'primary key' => array('n_pid'), 
+  );
+
+  return $schema;
+}
+function recommendations_cnt_uninstall() {
+  variable_del('recommendations_string');
+ 
+$name = "recommends_cnt";
+db_drop_table($name);
+}

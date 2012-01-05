@@ -1,0 +1,231 @@
+/*************************************************
+*          CSS used in dashboard
+/**************************************************/
+
+
+
+@media all and (max-width: 480px)  {
+/*  these are the css rulwes that apply to this */
+ 
+#rpgwrapper {
+	clear:both;
+	float:left;
+	width:100%;
+}
+#edit-title {
+	max-width:240px;
+	width:230px;
+}
+
+
+#rpgwrapper ul{
+    margin: 0 auto;
+}
+#rpgwrapper ul.rollover li{
+    text-align: left;
+    float: left;
+    list-style: none;
+    display:block;
+	width: 27%;
+	float:left;
+	margin-top:25px;
+	color:#000000;
+	margin: 6px;
+}
+    #rpgwrapper ul.rollover a{
+        display: block;
+        text-decoration: none;
+        color:#000000;
+        padding-top:5px;
+        text-align:center;
+    }
+    
+    #rpgwrapper ul.rollover img{
+        display: block;
+        text-decoration: none;
+        color:#000000;
+        padding-top:5px;
+        margin-left:auto;
+        margin-right:auto;
+    }
+    #rpgwrapper ul.rollover a:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+     #rpgwrapper ul.rollover img:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+
+#selwrapper ul.rollover li{
+    text-align: left;
+    float: left;
+    display:block;
+	margin:3px;
+	float:left; 
+	width: 100%;
+	height:25px;
+	border-bottom-style:solid;
+	border-bottom-width:1px;
+	border-bottom-color:gray;
+	color:#000000;
+    list-style: none;
+}
+    #selwrapper ul.rollover a{
+        display: block;
+        text-decoration: none;
+        
+        text-align:center;
+        color:#000000;
+    }
+    #selwrapper ul.rollover img{
+        display: block;
+        text-decoration: none;
+        color:#000000;
+        
+        margin-left:auto;
+        margin-right:auto;
+        
+    }
+    #selwrapper ul.rollover a:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+    #selwrapper ul.rollover img:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+    
+
+
+#rprof { 
+	clear:both;
+	text-align:center;
+	border-bottom-style:double;
+	border-bottom-width:2px;
+	border-bottom-color:gray;
+}
+
+#r7day {
+	width:80%; 
+}
+#req_viewform {
+	width:60%; 
+}
+
+#sdentry {
+	clear:both; 
+	margin-top:5px;
+}
+#formlimit {
+	width:100%;
+}
+#rqmsgsize {
+	width:85%;
+}
+
+}
+
+/* For the desktop */
+@media all and (min-width: 480px)  {
+/*  these are the css rulwes that apply to this */
+
+#rpgwrapper {
+	clear:both;
+}
+
+#rpgwrapper ul.rollover li{
+    text-align: left;
+    float: left;
+    display:block;
+	padding:5px;
+	float:left; 
+	width: 28%;
+	height:70px;
+	margin-top:25px;
+	color:#000000;
+    list-style: none;
+}
+    #rpgwrapper ul.rollover a{
+        display: block;
+        text-decoration: none;
+        padding-top:5px;
+        text-align:center;
+        color:#000000;
+    }
+    #rpgwrapper ul.rollover img{
+        display: block;
+        text-decoration: none;
+        color:#000000;
+        padding-top:5px;
+        margin-left:auto;
+        margin-right:auto;
+        
+    }
+    #rpgwrapper ul.rollover a:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+    #rpgwrapper ul.rollover img:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+    
+    #selwrapper ul.rollover li{
+    text-align: left;
+    float: left;
+    display:block;
+	padding:5px;
+	float:left; 
+	width: 28%;
+	height:70px;
+	margin-top:25px;
+	color:#000000;
+    list-style: none;
+}
+    #selwrapper ul.rollover a{
+        display: block;
+        text-decoration: none;
+        padding-top:5px;
+        text-align:center;
+        color:#000000;
+    }
+    #selwrapper ul.rollover img{
+        display: block;
+        text-decoration: none;
+        color:#000000;
+        padding-top:5px;
+        margin-left:auto;
+        margin-right:auto;
+        
+    }
+    #selwrapper ul.rollover a:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+    #selwrapper ul.rollover img:hover{
+        background-color:#EFEDEA;
+        text-decoration: none;
+    }
+    
+    
+
+#rprof { 
+	clear:both;
+	text-align:center;
+}
+ 
+#r7day {
+	width:80%; 
+}
+#req_viewform {
+	width:60%; 
+}
+#updateform {
+	width:480px;
+}
+#rqmsgsize {
+	width:80%;
+}
+
+}

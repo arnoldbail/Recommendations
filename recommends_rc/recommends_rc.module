@@ -1,0 +1,1340 @@
+<?php
+error_reporting(-1);
+$conf['error_level'] = 2;
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+
+function recommends_rc_entry_insert($entry) {
+
+
+  $return_value = NULL;
+  try {
+    $return_value = db_insert('recommends_rc')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
+}
+
+
+function recommends_rc_entry_update($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_rc')
+              ->fields($entry)
+              ->condition('r_pid', $entry['r_pid'])
+              ->condition('r_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+function recommends_rc_entry_update_srch($entry,$professor,$student,$school) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_rc')
+              ->fields($entry)
+              ->condition('r_email', $student)
+              ->condition('r_school', $school)
+              ->condition('r_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+/*******************************************************
+*
+*********************************************************/
+function recommends_rc_entry_view($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_rc')
+              ->fields($entry)
+              ->condition('r_pid', $entry['r_pid'])
+              ->condition('r_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+
+function recommends_rc_entry_delete($entry) {
+  db_delete('recommends_rc')
+    ->condition('r_pid', $entry['r_pid'])
+    ->condition('r_prof', variable_get('recommends_professor_email'))
+    ->execute();
+
+}
+
+
+function recommends_rc_entry_delete_full($email) {
+
+ $count = db_delete('recommends_rc')
+    ->condition('r_email', $email)
+    ->condition('r_prof', variable_get('recommends_professor_email'))
+    ->execute();
+}
+
+
+function recommends_rc_entry_load_mob($entry = array(),$search) {
+  // Read all fields from the recommends_cs table.
+  $select = db_select('recommends_rc', 'recommends_st');
+  $select->fields('recommends_st');
+  $select->condition('r_email', $search);
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_rc_entry_load_mob_item($entry = array(),$search,$item) {
+  // Read all fields from the recommends_cs table.
+  $select = db_select('recommends_rc', 'recommends_st');
+  $select->fields('recommends_st');
+  $select->condition('r_school', $item);
+  $select->condition('r_email', $search);
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value); 
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+
+
+function recommends_rc_entry_load($entry = array()) {
+  
+  $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('c', 'r_pid');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'initial');
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->orderBy('s.lastname', 'ASC');
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+
+  
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+
+function recommends_rc_entry_load_jst($entry = array(),$search) {
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('c', 'r_pid');
+  $select->addField('s', 'prefix');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'initial');
+  $select->addField('s', 'suffix');
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_email', $search);
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+function recommends_rc_entry_load_rcmd($entry = array(),$email, $school) {
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('c', 'r_pid');
+  $select->addField('s', 'prefix');
+  $select->addField('s', 'suffix');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'initial'); 
+  $select->addField('s', 's_prof_comments');
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_email', $email);
+  $select->condition('c.r_school', $school);
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+function recommends_rc_entry_load_srch_tsa($entry = array(),$search) {
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('c', 'r_pid');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+/*  $select->addField('s', 'initial');  */
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_timestamp', $search, '>');
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+function recommends_rc_entry_load_srch_status($entry = array(),$search) {
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  $select->addField('c', 'r_pid');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+/*  $select->addField('s', 'initial');  */
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+	$select->addField('c', 'r_school_contact_email');
+	$select->addField('c', 'r_school_contact_postal');
+  $select->addField('c', 'r_url');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_sent');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+  $select->addField('c', 'r_comments');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_timestamp');
+  $select->condition('c.r_status', $search,'=');
+  $select->condition('r_prof', variable_get('recommends_professor_email'));
+  $select->orderby('c.r_email');
+
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+function recommends_rc_list() {
+  $output = '';
+
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'initial');
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+   $select->addField('c', 'r_timestamp');
+   $select->condition('r_prof', variable_get('recommends_professor_email'));
+   $select->orderBy('s.lastname', 'ASC');
+  
+  $entries = $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  if (!empty($entries)) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', $entry);
+    }
+    // Make a table for them.
+    $header = array( t('  '), t(' Name'), t('  '), t('Email'), t('School'), t('Program '), t('Status '),  t('D'),  t('u'),  t('e  '),  t(' Timestamp'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries exist in schools table.'));
+  }
+  return $output;
+}
+
+/*******************************************************************
+*      Report: List of school recommendations sorted by due date
+********************************************************************/
+function recommends_rc_list_due() {
+  
+  drupal_set_title('Schools Sorted by Due Date');
+  
+  $output = '';
+
+   $select = db_select('recommends_rc', 'c');
+  // Join the Students table, so we can get the entry creator's username.
+  $select->join('recommends_st', 's', 'c.r_email = s.s_email');
+    // Select these specific fields for the output.
+  
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'initial');
+  $select->addField('c', 'r_email');
+  $select->addField('c', 'r_school');
+  $select->addField('c', 'r_program');
+  $select->addField('c', 'r_status');
+  $select->addField('c', 'r_date_due_month');
+  $select->addField('c', 'r_date_due_day');
+  $select->addField('c', 'r_date_due_year');
+   $select->addField('c', 'r_timestamp');
+   $select->condition('c.r_status', 'Closed','<>');
+   $select->condition('r_prof', variable_get('recommends_professor_email'));
+   $select->orderby('c.r_date_due_day')->orderBy('c.r_date_due_month')->orderBy('c.r_date_due_year');
+  
+  $entries = $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  if (!empty($entries)) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', $entry);
+    }
+    
+    // Make a table for them.
+    $header = array( t('  '), t(' Name'), t('  '), t('Email'), t('School'), t('Program '), t('Status '),  t('D'),  t('u'),  t('e  '),  t(' Timestamp'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries exist in schools table.'));
+  }
+  return $output;
+}
+
+
+/**
+ * Implements hook_help().
+ *
+ * Show some help on each form provided by this module.
+ */
+function recommends_rc_help($path) {
+  $output = '';
+  switch ($path) {
+    case 'recommendations/recmd_rc/recommendations':
+      break;
+    case 'recommendations/recmd_rc/recommendations/update':
+      break;
+    case 'recommendations/recmd_rc/recommendations/add':
+      break;
+    case 'recommendations/recmd_rc/recommendations/view':
+      break;
+    case 'recommendations/recmd_rc/recommendations/delete':
+      break;
+    case 'recommendations/recmd_rc/recommendations/due':
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Set up calls to drupal_get_form() for all our example cases.
+ */
+function recommends_rc_menu() {
+  $items = array();
+
+  $items['recommendations/recmd_rc/schools'] = array(
+    'title' => 'Schools',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_rc_form_view'),
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+    'weight' => -12,
+  );
+    $items['recommendations/recmd_rc/schools/view'] = array(
+    'title' => 'View',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_rc_form_view'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -11,
+  );
+ 
+  $items['recommendations/recmd_rc/schools/add'] = array(
+    'title' => 'Add',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_rc_form_add'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['recommendations/recmd_rc/schools/update'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_rc_form_update'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -9,
+  );
+   $items['recommendations/recmd_rc/schools/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_rc_form_delete'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -8,
+  );
+  $items['recommendations/recmd_rc/schools/help'] = array(
+    'title' => 'Help',
+    'page callback' => 'recommends_rc_advhelp',
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -7,
+  );
+  
+/*
+  $items['recommendations/recmd_rc/schools/due'] = array(
+    'title' => 'Due',
+    'page callback' => 'recommends_rc_list_due',
+    'type' => MENU_LOCAL_TASK,
+    'menu_name' => 'navigation',
+    'weight' => -6,
+    'access callback' => TRUE,
+  );
+*/  
+
+  return $items;
+}
+
+/**
+ * Render a list of entries in the database.
+ */
+function recommends_rc_advanced_list() {
+  $output = '';
+
+  // Get all entries in the recommends_rc table.
+  if ($entries = recommends_rc_entry_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array(t('Id '), t('Email '),  t('Schools'), t('Contact Email '), t('Contact Postal '),  t('Doc url'),  t('Status '),   t('Closed?'), t('Date due '),  t(' Comments'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+
+/**
+ * Prepare a simple form to add an entry, with all the interesting fields.
+ */
+function recommends_rc_form_add($form, &$form_state) {
+  
+  drupal_set_title('Schools - Add');
+  
+   $name = variable_get('recommends_name');
+   $s_email = variable_get('recommends_s_email');
+  
+   $form = array();
+  
+    $form = array(
+    '#prefix' => '<div id="addform">',
+    '#suffix' => '</div>',
+  );
+  
+  $form = array();
+  
+  
+  $form = array(
+    '#prefix' => '<div id="addform">',
+    '#suffix' => '</div>',
+  );
+
+  $form['add'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+ $form['add']['r_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('*Student email '),
+     '#disabled' => TRUE,
+    '#size'  =>25,
+    '#default_value' => $s_email,
+     );
+   $form['add']['add']['r_school'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School'),
+    '#size'  => 25,
+  );
+  $form['add']['add']['r_program'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School program/position'),
+    '#size'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  
+  $form['add']['add']['r_school_contact_email'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School contact email address'),
+    '#size'  => 25,
+  );
+  
+  $form['add']['add']['r_school_contact_postal'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('School contact postal address'),
+    '#rows'  => 4,
+    '#cols'  => 4,
+  );
+  
+   
+   $form['add']['add']['r_url'] = array(
+    '#type'  => 'hidden',
+    '#title' => t('Recommendlate'),
+    '#size'  => 25,
+  );
+   
+   $form['add']['add']['r_status'] = array(
+    '#type' => 'select',
+    '#title' => t('Status '),
+    '#size' => 1,
+     '#options' => array(
+    	'Initial' => t('Initial'), 
+    	'Open' => t('Open'), 
+    	'Closed' => t('Closed'),
+    	'Sent' => t('Sent/Notified'),
+  ),
+    '#default_value' => "Initial",
+  );
+   
+   
+  $form['add']['add']['r_sent'] = array(
+    '#type'  => 'hidden',
+    '#title' => t('Rec. Closed'),
+    '#size'  => 15,
+  );
+  
+  $form['add']['add']['r_date_due'] = array(
+    '#type' => 'date',
+    '#title' => t('Date due'),
+    '#size' => 10,
+    
+  );  
+   $form['add']['add']['r_comments'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('Professor comments'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['add']['r_timestamp'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size'  => 20,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+   
+  $form['add']['add']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Add'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for 'add entry' form.
+ */
+function recommends_rc_form_add_submit($form, $form_state){
+  global $user;
+  
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+
+  // Save the submitted entry.
+  $entry = array(
+    'r_email'     => $form_state['values']['r_email'],
+	 'r_school'     => $form_state['values']['r_school'],
+	  'r_school_contact_email'     => $form_state['values']['r_school_contact_email'],
+	  'r_school_contact_postal'     => $form_state['values']['r_school_contact_postal'],
+    'r_url'     => $form_state['values']['r_url'],
+     'r_status' => $form_state['values']['r_status'],
+     'r_sent'   => $form_state['values']['r_sent'],
+     'r_date_due_month' => $form_state['values']['r_date_due']['month'],
+     'r_date_due_day'   => $form_state['values']['r_date_due']['day'],
+     'r_date_due_year'  => $form_state['values']['r_date_due']['year'],
+    'r_comments'     	=> $form_state['values']['r_comments'],
+    'r_program'     	=> $form_state['values']['r_program'],
+    'r_timestamp'     	=> $timestamp,
+    'r_prof'     => variable_get('recommends_professor_email'),
+  );
+  
+  variable_set('recommends_item',$form_state['values']['r_school']);
+  
+  $return = recommends_rc_entry_insert($entry);
+  if ($return) {
+    drupal_set_message(t("School entry added for student  @entry ", array('@entry' => print_r($entry['r_email'] . " - " . $entry['r_school'] , TRUE))));
+    drupal_goto('recommendations/list/schools');
+  }
+}
+
+/**
+ *  update a schoolsrecord.
+ */
+function recommends_rc_form_update($form, &$form_state) {
+  
+  drupal_set_title('Schools - Edit');
+  
+  $name    = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+  $school  = variable_get('recommends_item');
+  $school  = str_replace( "_", " ",$school);
+  
+  $form = array(
+    '#prefix' => '<div id="updateform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_rc_entry_load_mob_item($entry,$search,$school);
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_rc table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->r_pid] = t("@r_school", array(
+    '@r_pid' => $entry->r_pid,
+    '@r_email' => $entry->r_email,
+    '@r_school' => $entry->r_school,
+    '@r_school_contact_email' => $entry->r_school_contact_email,
+    '@r_school_contact_postal' => $entry->r_school_contact_postal,
+    '@r_url' => $entry->r_url,
+    '@r_status' => $entry->r_status,
+    '@r_sent' => $entry->r_sent,
+    '@r_date_due_month' => $entry->r_date_due_month,
+    '@r_date_due_day' => $entry->r_date_due_day,
+    '@r_date_due_year' => $entry->r_date_due_year,
+    '@r_comments' => $entry->r_comments,
+    '@r_program' => $entry->r_program,
+    '@r_timestamp' => $entry->r_timestamp
+    ));
+    $keyed_entries[$entry->r_pid] = $entry;
+  }
+  
+  $default_entry = !empty($form_state['values']['r_pid']) ? $keyed_entries[$form_state['values']['r_pid']] : $entries[0];
+
+
+  $x_status = $entry->r_status;
+  $x_date_due_year = $entry->r_date_due_year;
+  $x_date_due_day = $entry->r_date_due_day;
+  $x_date_due_month = $entry->r_date_due_month;
+
+  $form_state['entries'] = $keyed_entries;
+  
+  $form = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+
+  
+  $form['r_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid '),
+    '#size' => 25,
+    '#default_value' => $default_entry->r_pid,
+  );
+
+  $form['r_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student email '),
+    '#size' => 25,
+    '#default_value' => $s_email,
+  );
+    $form['r_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School'),
+    '#size' => 25,
+    '#default_value' => $default_entry->r_school,
+  );
+  $form['r_program'] = array(
+      '#type'  => 'textfield',
+  	  '#title' => t('School Program/Position'),
+    '#size'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_program,
+  );
+  
+   $form['r_school_contact_email'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School contact email address'),
+    '#size'  => 25,
+    '#default_value' => $default_entry->r_school_contact_email,
+  );
+  
+  $form['r_school_contact_postal'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('School contact postal address'),
+    '#rows'  => 4,
+    '#cols'  => 40,
+    '#default_value' => $default_entry->r_school_contact_postal,
+  );
+  
+   $form['r_url'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Recommendlate'),
+    '#size' => 25,
+    '#default_value' => $default_entry->r_url,
+  );
+   $form['r_status'] = array(
+    '#type' => 'select',
+    '#title' => t('Status '),
+    '#size' => 1,
+     '#options' => array(
+    	'Initial' => t('Initial'), 
+    	'Open' => t('Open'), 
+    	'Closed' => t('Closed'),
+    	'Sent' => t('Sent/Notified'),
+  ),
+    '#default_value' => $x_status,
+  );
+  $form['r_sent'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Rec. sent'),
+    '#size' => 10,
+    '#default_value' => $default_entry->r_sent,
+  );
+  $form['r_date_due'] = array(
+    '#type' => 'date',
+    '#title' => t('Date due'),
+    '#size' => 10,
+    '#default_value' => array('year' => $x_date_due_year, 'month' => $x_date_due_month, 'day'
+=> $x_date_due_day),
+  );
+   $form['r_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Professor comments'),
+    '#cols'  => 25,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_comments,
+  );
+  $form['r_timestamp'] = array(
+      '#type'  => 'textfield',
+  	  '#title' => t('Timestamp'),
+    '#size'  => 20,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_timestamp,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+/******************************************************************
+ * UI to view a record.
+ *******************************************************************/
+function recommends_rc_form_view($form, &$form_state,$s_email=NULL,$name=NULL,$school=NULL) {
+  
+  drupal_set_title('Schools - View');
+  
+  if (!empty($s_email)) {
+    $name = str_replace( "_", " ", $name);
+    variable_set('recommends_name',$name);
+    variable_set('recommends_s_email',$s_email);
+    $school = str_replace( "_", " ", $school);
+    variable_set('recommends_item',$school);
+    
+  } else {
+      $name = variable_get('recommends_name');
+      $s_email = variable_get('recommends_s_email');
+      $school = variable_get('recommends_item');
+  }
+  
+/*  
+  $msg = "(850)This is variable_get recommends_item - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r(variable_get('recommends_item'), TRUE) . '</pre>'); 
+*/  
+  $form = array(
+    '#prefix' => '<div id="viewform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_rc_entry_load_mob_item($entry,$search,$school);
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_rc table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->r_pid] = t("@r_school", array(
+    '@r_pid' => $entry->r_pid, 
+    '@r_email' => $entry->r_email,
+    '@r_school' => $entry->r_school,
+    '@r_school_contact_email' => $entry->r_school_contact_email,
+    '@r_school_contact_postal' => $entry->r_school_contact_postal,
+    '@r_url' => $entry->r_url,
+    '@r_status' => $entry->r_status,
+    '@r_sent' => $entry->r_sent,
+    '@r_date_due_month' => $entry->r_date_due_month,
+    '@r_date_due_day' => $entry->r_date_due_day,
+    '@r_date_due_year' => $entry->r_date_due_year,
+     '@r_comments' => $entry->r_comments,
+     '@r_program' => $entry->r_program,
+     '@r_timestamp' => $entry->r_timestamp
+    ));
+    $keyed_entries[$entry->r_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['r_pid']) ? $keyed_entries[$form_state['values']['r_pid']] : $entries[0];
+
+  $x_status = $entry->r_status;
+  $x_date_due_year = $entry->r_date_due_year;
+  $x_date_due_day = $entry->r_date_due_day;
+  $x_date_due_month = $entry->r_date_due_month;
+  
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['view'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+  $form['view']['r_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid '),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_pid,
+  );
+  
+  $form['view']['r_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student email '),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_email,
+  );
+   $form['view']['r_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $school,
+  );
+  $form['view']['r_program'] = array(
+      '#type'  => 'textfield',
+  	  '#title' => t('School Program/Position'),
+    '#size'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_program,
+  );
+  
+  $form['view']['r_school_contact_email'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School contact email address'),
+    '#disabled' => TRUE,
+    '#size'  => 25,
+    '#default_value' => $default_entry->r_school_contact_email,
+  );
+  
+  $form['view']['r_school_contact_postal'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('School contact postal address'),
+    '#rows'  => 4,
+    '#cols'  => 40,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_school_contact_postal,
+  );
+  
+   $form['view']['r_url'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Recommendlate'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_url,
+  );
+   
+   $form['view']['r_status'] = array(
+    '#type' => 'select',
+    '#title' => t('Status '),
+    '#size' => 1,
+    '#disabled' => TRUE,
+     '#options' => array(
+    	'Initial' => t('Initial'), 
+    	'Open' => t('Open'), 
+    	'Closed' => t('Closed'),
+    	'Sent' => t('Sent/Notified'),
+  ),
+    '#default_value' => $x_status,
+  );
+   
+   
+   $form['view']['r_sent'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Rec. Closed'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_sent,
+  );
+  
+  $form['view']['r_date_due'] = array(
+    '#type' => 'date',
+    '#title' => t('Date due'),
+    '#disabled' => TRUE,
+    '#size' => 10,
+    '#default_value' => array('year' => $x_date_due_year, 'month' => $x_date_due_month, 'day'
+=> $x_date_due_day),
+  );
+   $form['view']['r_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Professor comments'),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_comments,
+  );
+  $form['view']['r_timestamp'] = array(
+      '#type'  => 'textfield',
+  	  '#title' => t('Timestamp'),
+    '#size'  => 20,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_timestamp,
+  );
+
+  $form['view']['submit'] = array(
+    '#type' => 'hidden',
+    '#value' => t('View'),
+  );
+  return $form;
+}
+
+/******************************************************************
+ * UI to delete a record.
+ *******************************************************************/
+function recommends_rc_form_delete($form, &$form_state) {
+  
+  drupal_set_title('Schools - Delete');
+  
+  $name    = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+  $school  = variable_get('recommends_item');
+  $school  = str_replace( "_", " ",$school);
+  
+  $form = array(
+    '#prefix' => '<div id="deleteform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_rc_entry_load_mob_item($entry,$search,$school);
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_rc table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->r_pid] = t("@r_school", array(
+    '@r_pid' => $entry->r_pid, 
+    '@r_email' => $entry->r_email,
+    '@r_school' => $entry->r_school,
+    '@r_school_contact_email' => $entry->r_school_contact_email,
+    '@r_school_contact_postal' => $entry->r_school_contact_postal,
+    '@r_url' => $entry->r_url,
+    '@r_status' => $entry->r_status,
+    '@r_sent' => $entry->r_sent,
+    '@r_date_due_month' => $entry->r_date_due_month,
+    '@r_date_due_day' => $entry->r_date_due_day,
+    '@r_date_due_year' => $entry->r_date_due_year,
+     '@r_comments' => $entry->r_comments,
+      '@r_program' => $entry->r_program,
+      '@r_timestamp' => $entry->r_timestamp
+    ));
+    $keyed_entries[$entry->r_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['r_pid']) ? $keyed_entries[$form_state['values']['r_pid']] : $entries[0];
+  
+  $x_status = $entry->r_status;
+  $x_date_due_year = $entry->r_date_due_year;
+  $x_date_due_day = $entry->r_date_due_day;
+  $x_date_due_month = $entry->r_date_due_month;
+  
+  /*
+  $msg = "This is default_entry - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>'); 
+  */
+
+  $form_state['entries'] = $keyed_entries;
+  /*
+  $msg = "This is form_state-entries - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state['entries'], TRUE) . '</pre>'); 
+*/
+  $form['delete'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+  );
+  
+  $form['r_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_pid,
+  );
+
+  $form['r_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student email '),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_email,
+  );
+   $form['r_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('School'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_school,
+  );
+  $form['r_program'] = array(
+      '#type'  => 'textfield',
+  	  '#title' => t('School Program/Position'),
+    '#size'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_program,
+  );
+  
+  $form['r_school_contact_email'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School contact email address'),
+    '#size'  => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_school_contact_email,
+  );
+  
+  $form['r_school_contact_postal'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('School contact postal address'),
+    '#rows'  => 4,
+    '#disabled' => TRUE,
+    '#cols'  => 40,
+    '#default_value' => $default_entry->r_school_contact_postal,
+  );
+  
+   $form['r_url'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Recommendlate'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_url,
+  );
+   
+    $form['r_status'] = array(
+    '#type' => 'select',
+    '#title' => t('Status '),
+    '#size' => 1,
+    '#disabled' => TRUE,
+     '#options' => array(
+    	'Initial' => t('Initial'), 
+    	'Open' => t('Open'), 
+    	'Closed' => t('Closed'),
+    	'Sent' => t('Sent/Notified'),
+  ),
+    '#default_value' => $x_status,
+  );
+   
+   
+  $form['r_sent'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Rec. Closed'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->r_sent,
+  );
+  
+   $form['r_date_due'] = array(
+    '#type' => 'date',
+    '#title' => t('Date due'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => array(
+    'year' => $x_date_due_year, 
+    'month' => $x_date_due_month, 
+    'day' => $x_date_due_day),
+  );
+  
+  
+   $form['r_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Professor comments'),
+    '#cols'  => 25,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_comments,
+  );
+  $form['r_timestamp'] = array(
+      '#type'  => 'textfield',
+  	  '#title' => t('Timestamp'),
+    '#size'  => 20,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->r_timestamp,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+/**
+ * AJAX callback handler for the r_pid select.
+ *
+ * When the r_pid changes, populates the defaults from the database in the form.
+ */
+function recommends_rc_form_update_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['r_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 'r_pid', 'r_email', 'r_school', 'r_school_contact_email', 'r_school_contact_postal','r_url', 'r_status', 'r_sent', 'r_date_due_month', 'r_date_due_day', 'r_date_due_year', 'r_comments', 'r_program', 'r_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+function recommends_rc_form_add_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['r_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 's_email') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for 'update entry' form.
+ */
+function recommends_rc_form_update_submit($form, $form_state){
+  global $user;
+  
+  
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+
+  // Save the submitted entry.
+  $entry = array(
+    'r_pid' => $form_state['values']['r_pid'],
+     'r_email' => $form_state['values']['r_email'],
+    'r_school' => $form_state['values']['r_school'],
+     'r_school_contact_email' => $form_state['values']['r_school_contact_email'],
+     'r_school_contact_postal' => $form_state['values']['r_school_contact_postal'],
+     'r_url' => $form_state['values']['r_url'],
+     'r_status' => $form_state['values']['r_status'],
+     'r_sent' => $form_state['values']['r_sent'],
+     'r_date_due_month' => $form_state['values']['r_date_due']['month'],
+     'r_date_due_day' => $form_state['values']['r_date_due']['day'],
+     'r_date_due_year' => $form_state['values']['r_date_due']['year'],
+     'r_comments' => $form_state['values']['r_comments'],
+     'r_program' => $form_state['values']['r_program'],
+     'r_timestamp' => $timestamp,
+  );
+  $count = recommends_rc_entry_update($entry);
+  
+  drupal_set_message(t("School entry updated for student  @entry ", array('@entry' => print_r($entry['r_email'] . " - " . $entry['r_school'] , TRUE))));
+  drupal_goto('recommendations/list/schools');
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_rc_form_view_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['r_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('r_pid', 'r_email', 'r_school', 'r_school_contact_postal', 'r_school_contact_email', 'r_url', 'r_status', 'r_sent', 'r_date_due_month', 'r_date_due_day', 'r_date_due_year', 'r_comments') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'view entry' form.
+ ***************************************************************/
+function recommends_rc_form_view_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'r_pid' => $form_state['values']['r_pid'],
+     'r_email' => $form_state['values']['r_email'],
+    'r_school' => $form_state['values']['r_school'],
+     'r_school_contact_email' => $form_state['values']['r_school_contact_email'],
+     'r_school_contact_postal' => $form_state['values']['r_school_contact_postal'],
+     'r_url' => $form_state['values']['r_url'],
+     'r_status' => $form_state['values']['r_status'],
+     'r_sent' => $form_state['values']['r_sent'],
+     'r_date_due_month' => $form_state['values']['r_date_due']['month'],
+     'r_date_due_day' => $form_state['values']['r_date_due']['day'],
+     'r_date_due_year' => $form_state['values']['r_date_due']['year'],
+     'r_comments' => $form_state['values']['r_comments'],
+     'r_program' => $form_state['values']['r_program'],
+     'r_timestamp' => $form_state['values']['r_timestamp'],
+  );
+  $count = recommends_rc_entry_view($entry);
+  drupal_set_message(t("Editd entry @entry (@count row updated)", array('@count' => $count, '@entry' => print_r($entry, TRUE))));
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_rc_form_delete_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['r_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('r_pid', 'r_email', 'r_school', 'r_school_contact_email', 'r_url', 'r_status', 'r_sent', 'r_date_due_month', 'r_date_due_day', 'r_date_due_year', 'r_comments', 'r_program', 'r_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+    
+   
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'delete entry' form.
+ ***************************************************************/
+function recommends_rc_form_delete_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'r_pid' => $form_state['values']['r_pid'],
+     'r_email' => $form_state['values']['r_email'],
+    'r_school' => $form_state['values']['r_school'],
+        'r_school_contact_email' => $form_state['values']['r_school_contact_email'],
+        'r_school_contact_postal' => $form_state['values']['r_school_contact_postal'],
+     'r_url' => $form_state['values']['r_url'],
+     'r_status' => $form_state['values']['r_status'],
+     'r_sent' => $form_state['values']['r_sent'],
+     'r_date_due_month' => $form_state['values']['r_date_due']['month'],
+     'r_date_due_day' => $form_state['values']['r_date_due']['day'],
+     'r_date_due_year' => $form_state['values']['r_date_due']['year'],
+     'r_comments' => $form_state['values']['r_comments'],
+     'r_program' => $form_state['values']['r_program'],
+     'r_timestamp' => $form_state['values']['r_timestamp'],
+  );
+  $count = recommends_rc_entry_delete($entry);
+  drupal_set_message(t("School entry deleted for student  @entry ", array('@entry' => print_r($entry['r_email'] . " - " . $entry['r_school'] , TRUE))));
+  drupal_goto('recommendations/list/schools');
+}
+
+/*************************************************************
+ *    Display help page
+ ***************************************************************/
+function recommends_rc_advhelp(){
+  drupal_set_title('Schools Requested - Help');
+
+  
+  $module = 'recommendations';
+  $topic = 'using-student-schools';
+  $type = 'title';
+  
+  $output = theme('advanced_help_topic', array(
+  'module' => $module, 
+  'topic' => $topic,
+  'type' => $type,
+  ));
+  
+  return $output;
+}  

@@ -1,0 +1,12 @@
+; $Id: recommendations_cs.info,v 1.0.0.1 2011/08/10 19:08:57 $
+name = Recommendations Courses Enrolled
+description = Courses student enrolled database
+package = Recommendations
+core = 7.x
+
+; Information added by drupal.org packaging script on 2012-01-03
+version = "7.x-1.0"
+core = "7.x"
+project = "Recommendations"
+datestamp = "1300320358"
+

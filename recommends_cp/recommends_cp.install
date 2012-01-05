@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Create table for the recommendations Course professor instructed.
+ */
+ 
+function recommends_cp_schema() {
+
+  $schema['recommends_cp'] = array(
+    'description' => 'Creates Course table.',
+    'fields' => array(
+      'i_pid'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ),
+      'i_course' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Course',
+      ),
+      'i_semester' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Semester course taken.',
+      ),
+      'i_year' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Year course taken.',
+      ),
+      'i_coursename' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Course title',
+      ),
+      'i_timestamp' => array(
+        'type' => 'varchar',
+        'length' => 19,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'Timestamp of last modified.',
+      ),
+      'i_prof' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Professor Email.',
+      ),
+      'i_objective' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Course Objective',
+      ),
+      'i_grade_a' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Grade A commentary',
+      ),
+       'i_grade_b' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Grade B commentary',
+      ),
+      'i_grade_other' => array(
+        'type' => 'varchar',
+        'length' => 2000,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Grade other commentary',
+      ),
+    ),
+    'primary key' => array('i_pid'), 
+  );
+
+  return $schema;
+}
+
+function recommendations_cp_uninstall() {
+  variable_del('recommendations_string');
+ 
+$name = "recommends_cp";
+db_drop_table($name);
+}
+
+
+
+
+

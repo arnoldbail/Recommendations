@@ -1,0 +1,834 @@
+<?php
+error_reporting(-1);
+$conf['error_level'] = 2;
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+?>
+<?php
+
+
+function recommends_cnt_entry_insert($entry) {
+  $return_value = NULL;
+  try {
+    $return_value = db_insert('recommends_cnt')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $return_value;
+}
+
+
+function recommends_cnt_entry_update($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_cnt')
+              ->fields($entry)
+              ->condition('n_pid', $entry['n_pid'])
+              ->condition('n_email', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+/*******************************************************
+*
+*********************************************************/
+function recommends_cnt_entry_view($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_cnt')
+              ->fields($entry)
+              ->condition('n_pid', $entry['n_pid'])
+              ->condition('n_email', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+
+function recommends_cnt_entry_delete($entry) {
+  db_delete('recommends_cnt')
+    ->condition('n_pid', $entry['n_pid'])
+    ->condition('n_email', variable_get('recommends_professor_email'))
+    ->execute();
+
+}
+
+function recommends_cnt_entry_delete_full($entry) {
+  db_delete('recommends_cnt')
+    ->condition('n_pid', $entry['n_email'])
+    ->condition('n_email', variable_get('recommends_professor_email'))
+    ->execute();
+
+}
+
+function recommends_cnt_entry_load($entry = array()) {
+  // Read all fields from the recommends_cnt table.
+  $select = db_select('recommends_cnt');
+  $select->fields('recommends_cnt');
+  $select->condition('n_email', variable_get('recommends_professor_email'));
+  $select->orderBy('n_site', 'ASC');
+
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_cnt_entry_load_mob($entry = array(),$contact) {
+  
+  // Read all fields from the recommends_cnt table.
+  $select = db_select('recommends_cnt');
+  $select->fields('recommends_cnt');
+  $select->condition('n_site', $contact);
+  $select->condition('n_email', variable_get('recommends_professor_email'));
+  $select->orderBy('n_site', 'ASC');
+
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_cnt_advanced_list() {
+  $output = '';
+
+   $select = db_select('recommends_cnt', 'c');
+  
+    // Select these specific fields for the output.
+  
+  $select->addField('c', 'n_site');
+  $select->addField('c', 'n_siteurl');
+  $select->addField('c', 'n_username');
+  $select->addField('c', 'n_password');
+  $select->addField('c', 'n_notes');
+  $select->addField('c', 'n_timestamp');
+  $select->condition('n_email', variable_get('recommends_professor_email'));
+
+  $entries = $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  if (!empty($entries)) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', $entry);
+    }
+    // Make a table for them.
+    $header = array( t('Site'), t('URL'), t('Username'), t('Password'),  t('Notes'),  t('Timestamp'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+       
+  }
+  else {
+    drupal_set_message(t('No entries in the Contact Table.'));
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_help().
+ *
+ * Show some help on each form provided by this module.
+ */
+function recommends_cnt_help($path) {
+  $output = '';
+  switch ($path) {
+    case 'recommendations/recmd_cnt/contacts':
+      break;
+    case 'recommendations/recmd_cnt/contacts/advanced':
+      break;
+    case 'recommendations/recmd_cnt/contacts/update':
+      break;
+    case 'recommendations/recmd_cnt/contacts/add':;
+      break;
+    case 'recommendations/recmd_cnt/contacts/view':
+      break;
+    case 'recommendations/recmd_cnt/contacts/delete':
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Set up calls to drupal_get_form() for all our example cases.
+ */
+function recommends_cnt_menu() {
+  $items = array();
+
+  $items['recommendations/recmd_cnt/contacts'] = array( 
+    'title' => 'Contacts',
+    'menu_name' => 'menu-professor',
+    'weight' => -2,
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cnt_form_view'),
+    'expanded' => TRUE,
+    'access callback' => TRUE,
+  );
+    $items['recommendations/recmd_cnt/contacts/view'] = array(
+    'title' => 'View',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cnt_form_view'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -11,
+  );
+  
+  $items['recommendations/recmd_cnt/contacts/add'] = array(
+    'title' => 'Add',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cnt_form_add'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['recommendations/recmd_cnt/contacts/update'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cnt_form_update'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -9,
+  );
+   $items['recommendations/recmd_cnt/contacts/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_cnt_form_delete'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -8,
+  );
+  $items['recommendations/recmd_cnt/contacts/help'] = array(
+    'title' => 'Help',
+    'page callback' => 'recommends_cnt_advhelp',
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -7,
+  );
+
+  return $items;
+}
+
+
+
+/**
+ * Prepare a simple form to add an entry, with all the interesting fields.
+ */
+function recommends_cnt_form_add($form, &$form_state) {
+  
+  drupal_set_title('Contact - Add'); 
+ 
+  $form['add'] = array(
+    '#type'  => 'fieldset',
+    '#title' => variable_get('recommends_professor'),
+  ); 
+ $form['n_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('*Professor Email'),
+     '#disabled' => TRUE,
+    '#size'  =>25,
+    '#default_value' => variable_get('recommends_professor_email'),
+     );
+   $form['add']['n_site'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Site'),
+    '#required'  => TRUE,
+    '#size'  => 20,
+  );
+   $form['add']['n_siteurl'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Site URL'),
+    '#size'  => 15,
+  );
+   $form['add']['n_username'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Username'),
+    '#size'  => 15,
+  );
+  $form['add']['n_password'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Password'),
+    '#size'  => 15,
+  );
+   $form['add']['n_notes'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('Notes'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['n_timestamp'] = array(
+    '#type'  => 'hidden',
+    '#title' => t('Timestamp'),
+    '#size'  => 20,
+  );
+  $form['add']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Add'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for 'add entry' form.
+ */
+function recommends_cnt_form_add_submit($form, $form_state){
+  global $user;
+
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  
+  // Save the submitted entry.
+  $entry = array(
+    'n_email'     => $form_state['values']['n_email'],
+	 'n_site'     => $form_state['values']['n_site'],
+    'n_siteurl'     => $form_state['values']['n_siteurl'],
+     'n_username'     => $form_state['values']['n_username'],
+     'n_password'     => $form_state['values']['n_password'],
+    'n_notes'     => $form_state['values']['n_notes'],
+    'n_timestamp'     => $timestamp,
+    'n_email'     => variable_get('recommends_professor_email'),
+  );
+  variable_set('recommends_contact',$form_state['values']['n_site']);
+    
+  $return = recommends_cnt_entry_insert($entry);
+  if ($return) {
+    
+    drupal_set_message(t("Contact entry created for professor  @entry ", array('@entry' => print_r($entry['n_email'] . " - " . $entry['n_site']  . " - " . $entry['n_siteurl'], TRUE))));
+    drupal_goto('recommendations/cntlist/contacts');
+  }
+}
+
+/**
+ * UI to update a record.
+ */
+function recommends_cnt_form_update($form, &$form_state) {
+  
+  drupal_set_title('Contact - Edit');
+  
+  $contact = variable_get('recommends_contact');
+  
+  $contact = str_replace( "%", " ", $contact);
+  
+  
+  $form = array(
+    '#prefix' => '<div id="updateform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry = Array();
+  $entries = recommends_cnt_entry_load_mob($entry,$contact);
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_cnt table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->n_pid] = t(" @n_site", array(
+    '@n_pid' => $entry->n_pid,
+    '@n_email' => $entry->n_email,
+    '@n_site' => $entry->n_site,
+    '@n_siteurl' => $entry->n_siteurl,
+    '@n_username' => $entry->n_username,
+    '@n_password' => $entry->n_password,
+     '@n_notes' => $entry->n_notes,
+     '@n_timestamp' => $entry->n_timestamp
+    ));
+    $keyed_entries[$entry->n_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['n_pid']) ? $keyed_entries[$form_state['values']['n_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+/*  
+  $msg = "(448)This is default_entry - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>');
+*/
+  
+  
+  $form['edit'] = array(
+    '#type'  => 'fieldset',
+    '#title' => variable_get('recommends_professor'),
+  );
+  $form['n_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 25,
+    '#default_value' => $default_entry->n_pid,
+  );
+
+  $form['n_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Professor Email'),
+    '#size' => 25,
+    '#default_value' => $default_entry->n_email,
+  );
+    $form['n_site'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site'),
+    '#size' => 25,
+    '#default_value' => $default_entry->n_site,
+  );
+   $form['n_siteurl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site URL'),
+    '#size' => 20,
+    '#default_value' => $default_entry->n_siteurl,
+  );
+   $form['n_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#size' => 15,
+    '#default_value' => $default_entry->n_username,
+  );
+  $form['n_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#size' => 15,
+    '#default_value' => $default_entry->n_password,
+  );
+   $form['n_notes'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Notes '),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->n_notes,
+  );
+  $form['n_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#default_value' => $default_entry->n_timestamp,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+/******************************************************************
+ * UI to view a record.
+ *******************************************************************/
+function recommends_cnt_form_view($form, &$form_state,$contact=NULL) {
+  
+  drupal_set_title('Contact - View');
+   
+  if (!empty($contact)) {
+    variable_set('recommends_contact',$contact);
+    
+  } else {
+      $contact = variable_get('recommends_contact');
+  }
+  
+  $contact = str_replace( "%", " ", $contact);
+  
+  $form = array(
+    '#prefix' => '<div id="viewform">',
+    '#suffix' => '</div>',
+  );
+  $entry = array();
+  $entries = recommends_cnt_entry_load_mob($entry,$contact);
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_cnt table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->n_pid] = t("@n_site", array(
+    '@n_pid' => $entry->n_pid, 
+    '@n_email' => $entry->n_email,
+    '@n_site' => $entry->n_site,
+    '@n_siteurl' => $entry->n_siteurl,
+    '@n_username' => $entry->n_username,
+    '@n_password' => $entry->n_password,
+     '@n_notes' => $entry->n_notes,
+     '@n_timestamp' => $entry->n_timestamp
+    ));
+    $keyed_entries[$entry->n_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['n_pid']) ? $keyed_entries[$form_state['values']['n_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  
+  
+  $form['view'] = array(
+    '#type'  => 'fieldset',
+    '#title' => variable_get('recommends_professor'),
+  );
+  
+  $form['view']['n_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_pid,
+  );
+
+  $form['view']['n_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Professor Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_email,
+  );
+   $form['view']['n_site'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_site,
+  );
+   $form['view']['n_siteurl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site URL'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_siteurl,
+  );
+   $form['view']['n_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_username,
+  );
+  $form['view']['n_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_password,
+  );
+   $form['view']['n_notes'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Notes '),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->n_notes,
+  );
+  $form['view']['n_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_timestamp,
+  );
+
+  $form['view']['submit'] = array(
+    '#type' => 'hidden',
+    '#value' => t('View'),
+  );
+  return $form;
+}
+
+/******************************************************************
+ * UI to delete a record.
+ *******************************************************************/
+function recommends_cnt_form_delete($form, &$form_state) {
+  
+  drupal_set_title('Contact - Delete');
+  
+  $contact = variable_get('recommends_contact');
+  $contact = str_replace( "%", " ", $contact);
+  
+  $form = array(
+    '#prefix' => '<div id="deleteform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry = Array();
+  $entries = recommends_cnt_entry_load_mob($entry,$contact);
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_cnt table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->n_pid] = t("@n_site", array(
+    '@n_pid' => $entry->n_pid, 
+    '@n_email' => $entry->n_email,
+    '@n_site' => $entry->n_site,
+    '@n_siteurl' => $entry->n_siteurl,
+    '@n_username' => $entry->n_username,
+    '@n_password' => $entry->n_password,
+     '@n_notes' => $entry->n_notes,
+     '@n_timestamp' => $entry->n_timestamp
+    ));
+    $keyed_entries[$entry->n_pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['n_pid']) ? $keyed_entries[$form_state['values']['n_pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['delete'] = array(
+    '#type'  => 'fieldset',
+    '#title' => variable_get('recommends_professor'),
+  );
+  $form['delete']['n_pid'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => $default_entry->n_pid,
+    '#ajax' => array(
+      'wrapper' => 'deleteform',
+      'callback' => 'recommends_cnt_form_delete_callback',
+    ),
+  );
+  $form['delete']['n_pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_pid,
+  );
+
+  $form['delete']['n_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Professor Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_email,
+  );
+   $form['delete']['n_site'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_site,
+  );
+   $form['delete']['n_siteurl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site URL'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_siteurl,
+  );
+   $form['delete']['n_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_username,
+  );
+  $form['delete']['n_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#size' => 15,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_password,
+  );
+   $form['delete']['n_notes'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Notes '),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->n_notes,
+  );
+  $form['delete']['n_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->n_timestamp,
+  );
+
+  $form['delete']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+/**
+ * AJAX callback handler for the n_pid select.
+ *
+ * When the n_pid changes, populates the defaults from the database in the form.
+ */
+function recommends_cnt_form_update_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['n_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 'n_email', 'n_site', 'n_siteurl', 'n_username', 'n_password', 'n_notes', 'n_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+ /*   
+    $msg = "(712)This is form-item-#values - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form[$item]['#value'], TRUE) . '</pre>');
+*/
+  }
+  
+  return $form;
+}
+function recommends_cnt_form_add_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['n_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array( 'n_email') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for 'update entry' form.
+ */
+function recommends_cnt_form_update_submit($form, $form_state){
+  global $user;
+  
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+
+  // Save the submitted entry.
+  $entry = array(
+    'n_pid' => $form_state['values']['n_pid'],
+     'n_email' => $form_state['values']['n_email'],
+    'n_site' => $form_state['values']['n_site'],
+     'n_siteurl' => $form_state['values']['n_siteurl'],
+     'n_username' => $form_state['values']['n_username'],
+     'n_password' => $form_state['values']['n_password'],
+     'n_notes' => $form_state['values']['n_notes'],
+     'n_timestamp' => $timestamp,
+  );
+  $count = recommends_cnt_entry_update($entry);
+  drupal_set_message(t("Contact entry updated for professor  @entry ", array('@entry' => print_r($entry['n_email'] . " - " . $entry['n_site']  . " - " . $entry['n_siteurl'], TRUE))));
+  drupal_goto('recommendations/cntlist/contacts');
+
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_cnt_form_view_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['n_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('n_pid', 'n_email', 'n_site', 'n_siteurl', 'n_username', 'n_password', 'n_notes', 'n_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'view entry' form.
+ ***************************************************************/
+function recommends_cnt_form_view_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'n_pid' => $form_state['values']['n_pid'],
+     'n_email' => $form_state['values']['n_email'],
+    'n_site' => $form_state['values']['n_site'],
+     'n_siteurl' => $form_state['values']['n_siteurl'],
+     'n_username' => $form_state['values']['n_username'],
+     'n_password' => $form_state['values']['n_password'],
+     'n_notes' => $form_state['values']['n_notes'],
+     'n_timestamp' => $form_state['values']['n_timestamp'],
+  );
+  $count = recommends_cnt_entry_view($entry);
+   drupal_set_message(t("Contact entry for professor  @entry ", array('@entry' => print_r($entry['n_email'] . " - " . $entry['n_site']  . " - " . $entry['n_siteurl'], TRUE))));
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_cnt_form_delete_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['n_pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('n_pid', 'n_email', 'n_site', 'n_siteurl', 'n_username', 'n_password', 'n_notes', 'n_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'delete entry' form.
+ ***************************************************************/
+function recommends_cnt_form_delete_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'n_pid' => $form_state['values']['n_pid'],
+     'n_email' => $form_state['values']['n_email'],
+    'n_site' => $form_state['values']['n_site'],
+     'n_siteurl' => $form_state['values']['n_siteurl'],
+     'n_username' => $form_state['values']['n_username'],
+     'n_password' => $form_state['values']['n_password'],
+     'n_notes' => $form_state['values']['n_notes'],
+     'n_timestamp' => $form_state['values']['n_timestamp'],
+  );
+  $count = recommends_cnt_entry_delete($entry);
+   drupal_set_message(t("Deleted contact entry for professor  @entry ", array('@entry' => print_r($entry['n_email'] . " - " . $entry['n_site']  . " - " . $entry['n_siteurl'], TRUE))));
+   drupal_goto('recommendations/cntlist/contacts');
+}
+
+/*************************************************************
+ *    Display help page
+ ***************************************************************/
+function recommends_cnt_advhelp(){
+  drupal_set_title('Contacts - Help');
+
+  
+  $module = 'recommendations';
+  $topic = 'using-prof-contact';
+  $type = 'title';
+  
+  $output = theme('advanced_help_topic', array(
+  'module' => $module, 
+  'topic' => $topic,
+  'type' => $type,
+  ));
+  
+  return $output;
+}  
+
+
+
+
+
+
+
+
+
+
+
+

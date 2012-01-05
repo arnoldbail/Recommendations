@@ -1,0 +1,1224 @@
+<?php
+function recommends_st_entry_insert($entry) {
+  $return_value = NULL;
+  try {
+    $return_value = db_insert('recommends_st')
+                    ->fields($entry)
+                    ->execute();
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('db_insert failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+      $return_value = 16;
+  }
+  return $return_value;
+}
+
+
+function recommends_st_entry_update($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_st')
+              ->fields($entry)
+              ->condition('pid', $entry['pid'])
+              ->condition('s_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+/*******************************************************
+*
+*********************************************************/
+function recommends_st_entry_view($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_st')
+              ->fields($entry)
+              ->condition('pid', $entry['pid'])
+              ->condition('s_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_update failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+/*******************************************************
+*					Delete
+*********************************************************/
+function recommends_st_entry_deltex($entry) {
+  try {
+    // db_update()...->execute() returns the number of rows updated.
+    $count = db_update('recommends_st')
+              ->fields($entry)
+              ->condition('pid', $entry['pid'])
+              ->condition('s_prof', variable_get('recommends_professor_email'))
+              ->execute();
+  }
+  catch(Exception $e) {
+    drupal_set_message(t('db_delete failed. Message = %message, query= %query',
+      array('%message' => $e->getMessage(), '%query' => $e->query_string)), 'error');
+  }
+  return $count;
+}
+
+
+function recommends_st_entry_delete($entry) {
+  // DELETE FROM {recommends_st} WHERE name = 'John'
+    db_delete('recommends_st')
+      ->condition('s_prof', variable_get('recommends_professor_email'))
+      ->condition('pid',  $entry['pid'])
+      ->execute();
+
+}
+
+
+
+function recommends_st_entry_load($entry = array()) {
+  // Read all fields from the recommends_st table.
+  $select = db_select('recommends_st');
+  $select->fields('recommends_st');
+  $select->orderby('lastname', 'ASC');
+  $select->condition('s_prof', variable_get('recommends_professor_email'));
+
+  
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_st_entry_load_email($entry = array(), $email) {
+  // Read all fields from the recommends_st table.
+  $select = db_select('recommends_st');
+  $select->fields('recommends_st');
+  $select->condition('s_email', $email);
+  $select->condition('s_prof', variable_get('recommends_professor_email'));
+
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+function recommends_st_entry_load_list($entry = array()) {
+  
+  $select = db_select('recommends_st', 's');
+  // Join the Students table, so we can get the entry creator's username.
+  
+    // Select these specific fields for the output.
+  
+  $select->addField('s', 'prefix');
+  $select->addField('s', 'firstname');
+  $select->addField('s', 'lastname');
+  $select->addField('s', 'suffix');
+  $select->addField('s', 'initial');   
+  $select->addField('s', 's_email');
+  $select->addField('s', 's_req_date');
+  $select->addField('s', 's_timestamp');
+  $select->orderby('s.lastname', 'ASC');
+  $select->condition('s_prof', variable_get('recommends_professor_email'));
+  
+
+  // Now, loop all these entries and show them in a table. Note that there is no
+  // db_fetch_* object or array function being called here. Also note that the
+  // following line could have been written as
+  // $entries = $select->execute()->fetchAll() which would return each selected
+  // record as an object instead of an array.
+  return $select->execute()->fetchAll(PDO::FETCH_ASSOC);
+  
+}
+
+/**
+ * Implements hook_help().
+ *
+ * Show some help on each form provided by this module.
+ */
+function recommends_st_help($path) {
+  $output = '';
+  switch ($path) {
+    case 'recommendations/recmd_st/students':
+      $output = 'Professor: ' . variable_get('recommends_professor');
+      break;
+    case 'recommendations/recmd_st/students/update':
+      break;
+    case 'recommendations/recmd_st/students/add':
+      break;
+    case 'recommendations/recmd_st/students/view':
+      break;
+    case 'recommendations/recmd_st/students/delete':
+    	$output = t('This does NOT delete associated school and course records.');
+      break;
+    case 'recommendations/recmd_st/students/deletefull':
+    	$output = t('This includes the associated school and course records.');
+    	$output .= t('All the records of the selected student will be deleted.');
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Set up calls to drupal_get_form().
+ */
+function recommends_st_menu() {
+  $items = array();
+
+  $items['recommendations/recmd_st/students'] = array(
+    'title' => 'Students',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_st_form_view'),
+    'menu_name' => 'menu-professor',
+    'weight' => -12,
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+  );
+    $items['recommendations/recmd_st/students/view'] = array(
+    'title' => 'View',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_st_form_view'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -11,
+  );
+  
+  $items['recommendations/recmd_st/students/add'] = array(
+    'title' => 'Add',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_st_form_add'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['recommendations/recmd_st/students/update'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_st_form_update'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -9,
+  );
+   $items['recommendations/recmd_st/students/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_st_form_delete'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -8,
+  );
+   $items['recommendations/recmd_st/students/deletefull'] = array(
+    'title' => 'Delete Full',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_st_form_delete_full'),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -7,
+  );
+  $items['recommendations/recmd_st/students/help'] = array(
+    'title' => 'Help',
+    'page callback' => 'recommends_at_advhelp',
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => TRUE,
+    'weight' => -6,
+  );
+
+  return $items;
+}
+
+/**
+ * Render a list of entries in the database.
+ */
+function recommends_st_list() {
+  $output = '';
+
+  // Get all entries in the recommends_st table.
+  if ($entries = recommends_st_entry_load_list()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array( t(' '), t('Name'),  t(' '),t(' '),t('Email'), t('Date Entered'), t('Timestamp'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+
+/**
+ * Prepare a simple form to add an entry, with all the interesting fields.
+ */
+function recommends_st_form_add($form, &$form_state) {
+  
+  drupal_set_title('Student - Add');
+  
+  $form = array();
+
+  $form['add'] = array(
+    '#type'  => 'fieldset',
+    '#title' => variable_get('recommends_professor'),
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+  $form['add']['prefix'] = array(
+    '#type' => 'select',
+    '#title' => t('Name prefix'),
+    '#size' => 1,
+    '#required' => TRUE,
+     '#options' => array(
+    	'Mr.' => t('Mr.'),
+    	'Ms.' => t('Ms.'),
+    	'Mrs.' => t('Mrs.'), 
+        ),
+  );
+  $form['add']['firstname'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('First Name'),
+    '#required'  => TRUE,
+    '#size'  => 15,
+  );
+  $form['add']['lastname'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Last Name'),
+    '#required'  => TRUE,
+    '#size'  => 15,
+  );
+    $form['add']['initial'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Initial'),
+    '#size'  => 15,
+  );
+  $form['add']['suffix'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Name Suffix'),
+    '#size'  => 5,
+  );
+  $form['add']['s_email'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Email'),
+    '#size'  =>25,
+    '#required'  => TRUE,
+     );
+   $form['add']['s_school'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('School'),
+    '#required'  => TRUE,
+    '#size'  => 15,
+  );
+   $form['add']['s_req_date'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Date Requested'),
+    '#size'  => 15,
+  );
+   $form['add']['s_master_doc'] = array(
+    '#type'  => 'hidden',
+    '#title' => t('Master Document'),
+    '#size'  => 20,
+  );
+   $form['add']['s_comments'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('Statement of intent, Point of view '),
+    '#cols'  => 30,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>',
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['s_prof_comments'] = array(
+    '#type'  => 'textarea',
+    '#title' => t('Student attributes/Personal Comments'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+  );
+  $form['add']['s_timestamp'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size'  => 20,
+  );
+  $form['add']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Add'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for 'add entry' form.
+ */
+function recommends_st_form_add_submit($form, $form_state){
+  global $user;
+
+    $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  // Save the submitted entry.
+  $entry = array(
+    'prefix'    => $form_state['values']['prefix'],
+    'firstname' => $form_state['values']['firstname'],
+    'lastname' => $form_state['values']['lastname'],
+     'initial' => $form_state['values']['initial'],
+     'suffix'  => $form_state['values']['suffix'],
+    's_email'  => $form_state['values']['s_email'],
+	 's_school' => $form_state['values']['s_school'],
+    's_req_date' => $form_state['values']['s_req_date'],
+     's_master_doc' => $form_state['values']['s_master_doc'],
+    's_comments' => $form_state['values']['s_comments'],
+    's_prof_comments' => $form_state['values']['s_prof_comments'],
+    's_timestamp'     => $timestamp,
+    's_prof'     => variable_get('recommends_professor_email'),
+  );
+  $return = recommends_st_entry_insert($entry);
+  if ($return) {
+    drupal_set_message(t("Added student @entry", array('@entry' => print_r($entry['lastname'] . ", " . $entry['firstname'] . " " . $entry['initial'], TRUE))));
+    drupal_goto('recommendations/list/students');
+  }
+}
+
+/**
+ * UI to update a record.
+ */
+function recommends_st_form_update($form, &$form_state) {
+  
+  drupal_set_title('Student - Edit');
+  
+  $name = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+  
+   $form = array(
+    '#prefix' => '<div id="updateform">',
+    '#suffix' => '</div>',
+  );
+
+  $entry1 = array();
+  $search = $s_email;
+  $entries = recommends_st_entry_load_email($entry1,$search); 
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_st table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->pid] = t(" @firstname @lastname @initial (@s_email)", array(
+    '@pid' => $entry->pid,
+    '@prefix' => $entry->prefix,
+    '@firstname' => $entry->firstname,
+    '@lastname' => $entry->lastname, 
+     '@initial' => $entry->initial,
+     '@suffix' => $entry->suffix,
+    '@s_email' => $entry->s_email,
+    '@s_school' => $entry->s_school,
+    '@s_req_date' => $entry->s_req_date,
+    '@s_master_doc' => $entry->s_master_doc,
+     '@s_comments' => $entry->s_comments,
+     '@s_prof_comments' => $entry->s_prof_comments,
+     '@s_timestamp' => $entry->s_timestamp
+    ));
+    $keyed_entries[$entry->pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['pid']) ? $keyed_entries[$form_state['values']['pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['s_edit'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>',
+  );
+  $form['pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 5,
+    '#default_value' => $default_entry->pid,
+  );
+
+  $form['prefix'] = array(
+    '#type' => 'select',
+    '#title' => t('Name prefix'),
+    '#size' => 1,
+    '#default_value' => $default_entry->prefix,
+    '#required' => TRUE,
+     '#options' => array(
+    	'Mr.' => t('Mr.'),
+    	'Ms.' => t('Ms.'),
+    	'Mrs.' => t('Mrs.'), 
+        ),
+  );
+  $form['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First Name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->firstname,
+  );
+
+  $form['lastname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last Name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->lastname,
+  );
+   $form['initial'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Initial'),
+    '#size' => 4,
+    '#default_value' => $default_entry->initial,
+  );
+  $form['suffix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name Suffix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->suffix,
+  );
+  $form['s_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#default_value' => $s_email,
+  );
+    $form['s_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student School'),
+    '#size' => 10,
+    '#default_value' => $default_entry->s_school,
+  );
+   $form['s_req_date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Date Student Requested'),
+    '#size' => 20,
+    '#default_value' => $default_entry->s_req_date,
+  );
+   $form['s_master_doc'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Master Document'),
+    '#size' => 20,
+    '#default_value' => $default_entry->s_master_doc,
+  );
+   $form['s_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Statement of intent, Point of view '),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_comments,
+  );
+  $form['s_prof_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Student attributes/Personal Comments'),
+    '#cols'  => 30,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_prof_comments,
+  );
+  $form['s_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#default_value' => $default_entry->s_timestamp,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+/******************************************************************
+ * UI to view a record.
+ *******************************************************************/
+function recommends_st_form_view($form, &$form_state,$s_email=NULL,$name=NULL) {
+  
+  drupal_set_title('Student - View');
+  
+   if (!empty($s_email)) {
+    $name = str_replace( "%", " ", $name);
+    variable_set('recommends_name',$name);
+    variable_set('recommends_s_email',$s_email);
+  } else {
+      $name = variable_get('recommends_name');
+      $s_email = variable_get('recommends_s_email');
+  }
+
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_st_entry_load_email($entry,$search); 
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_st table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->pid] = t(" @firstname @lastname @initial (@s_email)", array(
+    '@pid' => $entry->pid,
+    '@prefix' => $entry->prefix,
+    '@firstname' => $entry->firstname,
+    '@lastname' => $entry->lastname, 
+     '@initial' => $entry->initial,
+     '@suffix' => $entry->suffix,
+    '@s_email' => $entry->s_email,
+    '@s_school' => $entry->s_school,
+    '@s_req_date' => $entry->s_req_date,
+    '@s_master_doc' => $entry->s_master_doc,
+     '@s_comments' => $entry->s_comments,
+     '@s_prof_comments' => $entry->s_prof_comments,
+     '@s_timestamp' => $entry->s_timestamp
+    ));
+    $keyed_entries[$entry->pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['pid']) ? $keyed_entries[$form_state['values']['pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  
+  $form['view'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+
+  $form['view']['prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name Prefix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->prefix,
+    '#disabled' => TRUE,
+  );
+  $form['view']['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->firstname,
+    '#disabled' => TRUE,
+  );
+
+  $form['view']['lastname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->lastname,
+    '#disabled' => TRUE,
+  );
+   $form['view']['initial'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Initial'),
+    '#size' => 4,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->initial,
+  );
+  $form['view']['suffix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name Suffix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->suffix,
+    '#disabled' => TRUE,
+  );
+  $form['view']['s_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $s_email,
+  );
+   $form['view']['s_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student School'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_school,
+  );
+   $form['view']['s_req_date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Date Student Requested'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_req_date,
+  );
+   $form['view']['s_master_doc'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Master Document'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_master_doc,
+  );
+   $form['view']['s_comments'] = array(
+    '#type'  => 'textarea',
+  	'#title' => t('Statement of intent, Point of view '),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+    '#rows'  => 3,
+    '#default_value' => $default_entry->s_comments,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+  $form['view']['s_prof_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Student attributes/Personal Comments'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_prof_comments,
+  );
+  $form['view']['s_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_timestamp,
+  );
+
+  $form['view']['submit'] = array(
+    '#type' => 'hidden',
+    '#value' => t('View'),
+  );
+  return $form;
+}
+/******************************************************************
+ * UI to delete a record.
+ *******************************************************************/
+function recommends_st_form_delete($form, &$form_state) {
+  
+  drupal_set_title('Student - Delete');
+  
+  $name = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+
+  $entry1 = array();
+  $search = $s_email;
+  $entries = recommends_st_entry_load_email($entry1,$search); 
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_st table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->pid] = t(" @firstname @lastname @initial (@s_email)", array(
+    '@pid' => $entry->pid,
+    '@prefix' => $entry->prefix,
+    '@firstname' => $entry->firstname,
+    '@lastname' => $entry->lastname, 
+     '@initial' => $entry->initial,
+     '@suffix' => $entry->suffix,
+    '@s_email' => $entry->s_email,
+    '@s_school' => $entry->s_school,
+    '@s_req_date' => $entry->s_req_date,
+    '@s_master_doc' => $entry->s_master_doc,
+     '@s_comments' => $entry->s_comments,
+     '@s_prof_comments' => $entry->s_prof_comments,
+     '@s_timestamp' => $entry->s_timestamp
+    ));
+    $keyed_entries[$entry->pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['pid']) ? $keyed_entries[$form_state['values']['pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['delete'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+  $form['delete']['pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 5,
+    '#default_value' => $default_entry->pid,
+  );
+
+  $form['delete']['prefix'] = array(
+    '#type' => 'select',
+    '#title' => t('Name prefix'),
+    '#size' => 1,
+    '#default_value' => $default_entry->prefix,
+    '#required' => TRUE,
+     '#options' => array(
+    	'Mr.' => t('Mr.'),
+    	'Ms.' => t('Ms.'),
+    	'Mrs.' => t('Mrs.'), 
+        ),
+  );
+   $form['delete']['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->firstname,
+    '#disabled' => TRUE,
+  );
+
+  $form['delete']['lastname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->lastname,
+    '#disabled' => TRUE,
+  );
+   $form['delete']['initial'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Initial'),
+    '#size' => 4,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->initial,
+  );
+  $form['delete']['suffix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name Suffix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->suffix,
+    '#disabled' => TRUE,
+  );
+  $form['delete']['s_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $s_email,
+  );
+   $form['delete']['s_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student School'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_school,
+  );
+   $form['delete']['s_req_date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Date Student Requested'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_req_date,
+  );
+   $form['delete']['s_master_doc'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Master Document'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_master_doc,
+  );
+   $form['delete']['s_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Statement of intent, Point of view '),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_comments,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+  $form['delete']['s_prof_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Student attributes/Personal Comments'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_prof_comments,
+  );
+  $form['delete']['s_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_timestamp,
+  );
+
+  $form['delete']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+  return $form;
+}
+
+
+/******************************************************************
+ * UI to delete all records associated with a student
+ *******************************************************************/
+function recommends_st_form_delete_full($form, &$form_state) {
+  
+  drupal_set_title('Student - Delete Full');
+  
+   $name = variable_get('recommends_name');
+  $s_email = variable_get('recommends_s_email');
+
+
+  $entry1 = array();
+  $search = $s_email;
+  $entries = recommends_st_entry_load_email($entry1,$search);
+  
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_st table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->pid] = t(" @firstname @lastname @initial (@s_email)", array(
+    '@pid' => $entry->pid,
+    '@prefix' => $entry->prefix,
+    '@firstname' => $entry->firstname,
+    '@lastname' => $entry->lastname, 
+     '@initial' => $entry->initial,
+     '@suffix' => $entry->suffix,
+    '@s_email' => $entry->s_email,
+    '@s_school' => $entry->s_school,
+    '@s_req_date' => $entry->s_req_date,
+    '@s_master_doc' => $entry->s_master_doc,
+     '@s_comments' => $entry->s_comments,
+     '@s_prof_comments' => $entry->s_prof_comments,
+     '@s_timestamp' => $entry->s_timestamp
+    ));
+    $keyed_entries[$entry->pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['pid']) ? $keyed_entries[$form_state['values']['pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  $form['deletefull'] = array(
+    '#type'  => 'fieldset',
+    '#title' => $name,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+  $form['delete']['pid'] = array(
+    '#type' => 'hidden',
+    '#title' => t('pid'),
+    '#size' => 5,
+    '#default_value' => $default_entry->pid,
+  );
+
+  $form['deletefull']['prefix'] = array(
+    '#type' => 'select',
+    '#title' => t('Name prefix'),
+    '#size' => 1,
+    '#default_value' => $default_entry->prefix,
+    '#required' => TRUE,
+     '#options' => array(
+    	'Mr.' => t('Mr.'),
+    	'Ms.' => t('Ms.'),
+    	'Mrs.' => t('Mrs.'), 
+        ),
+  );
+   $form['deletefull']['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->firstname,
+    '#disabled' => TRUE,
+  );
+
+  $form['deletefull']['lastname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->lastname,
+    '#disabled' => TRUE,
+  );
+   $form['deletefull']['initial'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Initial'),
+    '#size' => 4,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->initial,
+  );
+  $form['deletefull']['suffix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name Suffix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->suffix,
+    '#disabled' => TRUE,
+  );
+  $form['deletefull']['s_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $s_email,
+  );
+   $form['deletefull']['s_school'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student School'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_school,
+  );
+   $form['deletefull']['s_req_date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Date Student Requested'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_req_date,
+  );
+   $form['deletefull']['s_master_doc'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Master Document'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_master_doc,
+  );
+   $form['deletefull']['s_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Statement of intent, Point of view '),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_comments,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>'
+  );
+  $form['deletefull']['s_prof_comments'] = array(
+      '#type'  => 'textarea',
+  	  '#title' => t('Student attributes/Personal Comments'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_prof_comments,
+  );
+  $form['deletefull']['s_timestamp'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Timestamp'),
+    '#size' => 20,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_timestamp,
+  );
+
+  $form['deletefull']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete All Student Records'),
+  );
+  return $form;
+}
+
+/**
+ * AJAX callback handler for the pid select.
+ *
+ * When the pid changes, populates the defaults from the database in the form.
+ */
+function recommends_st_form_update_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('prefix', 'firstname', 'lastname', 'initial', 'suffix', 's_email', 's_school', 's_req_date', 's_master_doc', 's_comments', 's_prof_comments', 's_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/**
+ * Submit handler for 'update entry' form.
+ */
+function recommends_st_form_update_submit($form, $form_state){
+  global $user;
+
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  // Save the submitted entry.
+  $entry = array(
+    'pid' => $form_state['values']['pid'],
+    'prefix' => $form_state['values']['prefix'],
+    'firstname' => $form_state['values']['firstname'],
+    'lastname' => $form_state['values']['lastname'],
+     'initial' => $form_state['values']['initial'],
+     'suffix' => $form_state['values']['suffix'],
+     's_email' => $form_state['values']['s_email'],
+    's_school' => $form_state['values']['s_school'],
+     's_req_date' => $form_state['values']['s_req_date'],
+     's_master_doc' => $form_state['values']['s_master_doc'],
+     's_comments' => $form_state['values']['s_comments'],
+     's_prof_comments' => $form_state['values']['s_prof_comments'],
+     's_timestamp' => $timestamp,
+  );
+  
+  $count = recommends_st_entry_update($entry);
+  
+  drupal_set_message(t("Update successful for student  @entry ", array('@count' => $count, '@entry' => print_r($entry['lastname'] . ", " . $entry['firstname']  . " " . $entry['initial'], TRUE))));
+  drupal_goto('recommendations/list/students');
+}
+/*************************************************************
+*
+**************************************************************/
+function recommends_st_form_view_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('prefix', 'firstname', 'lastname', 'initial', 'suffix',  's_email', 's_school', 's_req_date', 's_master_doc', 's_comments', 's_prof_comments', 's_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+/*************************************************************
+*					Delete
+**************************************************************/
+function recommends_st_form_delete_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('prefix', 'firstname', 'lastname', 'initial', 'suffix', 's_email', 's_school', 's_req_date', 's_master_doc', 's_comments', 's_prof_comments', 's_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+*					Delete a student's full recordset
+**************************************************************/
+function recommends_st_form_delete_full_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('prefix', 'firstname', 'lastname', 'initial', 'suffix', 's_email', 's_school', 's_req_date', 's_master_doc', 's_comments', 's_prof_comments', 's_timestamp') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  return $form;
+}
+
+/*************************************************************
+ * Submit handler for 'view entry' form.
+ ***************************************************************/
+function recommends_st_form_view_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+    'prefix' => $form_state['values']['prefix'],
+    'firstname' => $form_state['values']['firstname'],
+    'lastname' => $form_state['values']['lastname'],
+     'initial' => $form_state['values']['initial'],
+     'suffix' => $form_state['values']['suffix'],
+     's_email' => $form_state['values']['s_email'],
+    's_school' => $form_state['values']['s_school'],
+     's_req_date' => $form_state['values']['s_req_date'],
+     's_master_doc' => $form_state['values']['s_master_doc'],
+     's_comments' => $form_state['values']['s_comments'],
+     's_prof_comments' => $form_state['values']['s_prof_comments'],
+     's_timestamp' => $form_state['values']['s_timestamp'],
+  );
+  
+  drupal_set_message(t("Viewed student @entry", array('@entry' => print_r($entry['lastname'] . ", " . $entry['firstname'] . " " . $entry['initial'], TRUE))));
+}
+/*************************************************************
+ * Submit handler for 'delete entry' form.
+ ***************************************************************/
+function recommends_st_form_delete_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+  'pid' => $form_state['values']['pid'],
+    'prefix' => $form_state['values']['prefix'],
+    'firstname' => $form_state['values']['firstname'],
+    'lastname' => $form_state['values']['lastname'],
+     'initial' => $form_state['values']['initial'],
+     'suffix' => $form_state['values']['suffix'],
+     's_email' => $form_state['values']['s_email'],
+    's_school' => $form_state['values']['s_school'],
+     's_req_date' => $form_state['values']['s_req_date'],
+     's_master_doc' => $form_state['values']['s_master_doc'],
+     's_comments' => $form_state['values']['s_comments'],
+     's_prof_comments' => $form_state['values']['s_prof_comments'],
+     's_timestamp' => $form_state['values']['s_timestamp'],
+  );
+  
+  $count = recommends_st_entry_delete($entry);
+  
+  drupal_set_message(t("Deleted student @entry", array('@entry' => print_r($entry['lastname'] . ", " . $entry['firstname'] . " " . $entry['initial'], TRUE))));
+  drupal_goto('recommendations/list/students');
+}
+
+/*************************************************************
+ * Submit handler for 'delete full' form.
+ ***************************************************************/
+function recommends_st_form_delete_full_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+  'pid' => $form_state['values']['pid'],
+    'prefix' => $form_state['values']['prefix'],
+    'firstname' => $form_state['values']['firstname'],
+    'lastname' => $form_state['values']['lastname'],
+     'initial' => $form_state['values']['initial'],
+     'suffix' => $form_state['values']['suffix'],
+     's_email' => $form_state['values']['s_email'],
+    's_school' => $form_state['values']['s_school'],
+     's_req_date' => $form_state['values']['s_req_date'],
+     's_master_doc' => $form_state['values']['s_master_doc'],
+     's_comments' => $form_state['values']['s_comments'],
+     's_prof_comments' => $form_state['values']['s_prof_comments'],
+     's_timestamp' => $form_state['values']['s_timestamp'],
+  );
+  
+  recommends_rc_entry_delete_full($entry['s_email']);
+   
+  recommends_cs_entry_delete_full($entry['s_email']);
+  
+  $count = recommends_st_entry_delete($entry);
+  
+  $title = $entry['prefix'] . " " . $entry['firstname'] . " " . $entry['initial']  . " " . $entry['lastname'] .  " " . $entry['suffix'];
+  
+  delete_recommendlates($title);
+  
+  drupal_set_message(t("Deleted entries for student  @entry ", array('@count' => $count, '@entry' => print_r($entry['lastname'] . ", " . $entry['firstname']  . " " . $entry['initial'], TRUE))));
+  drupal_goto('recommendations/list/students');
+}
+
+
+function delete_recommendlates($title) {
+  
+  $title  = $title . '%';
+  
+  $num_deleted = db_delete('node')
+  ->condition('title', $title,'LIKE')
+  ->execute();
+}
+/*************************************************************
+ *    Display help page
+ ***************************************************************/
+function recommends_at_advhelp(){
+  drupal_set_title('Students - Help');
+
+  
+  $module = 'recommendations';
+  $topic = 'using-student-info';
+  $type = 'title';
+  
+  $output = theme('advanced_help_topic', array(
+  'module' => $module, 
+  'topic' => $topic,
+  'type' => $type,
+  ));
+  
+  return $output;
+}  

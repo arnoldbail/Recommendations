@@ -1,0 +1,295 @@
+<?php
+
+function recommends_wrec_entry_load($entry = array()) {
+  // Read all fields from the recommends_st table.
+  $select = db_select('recommends_st');
+  $select->fields('recommends_st');
+  $select->orderBy('lastname', 'ASC');
+  $select->condition('s_prof', variable_get('recommends_professor_email'));
+
+  // Add each field and value as a condition to this query.
+  foreach ($entry as $field => $value) {
+    $select->condition($field, $value);
+  }
+  // Return the result in object format.
+  return $select->execute()->fetchAll();
+}
+
+/**
+ * Implements hook_help().
+ *
+ * Show some help on each form provided by this module.
+ */
+function recommends_wrec_help($path) {
+  $output = '';
+  switch ($path) {
+    case 'recommendations/recmd_wrec/wrec':
+      $output = t('Complete worksheet of all the information relating to the student request.');
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Set up calls to drupal_get_form() for all our example cases.
+ */
+function recommends_wrec_menu() {
+  $items = array();
+
+  $items['recommendations/recmd_wrec/wrec'] = array(
+    'title' => 'Student Information Sheet',
+    'page callback' => 'recommends_wrec_infosheet',
+    'type' => MENU_NORMAL_ITEM,
+    'page arguments' => array(),
+    'description' => 'Build and display information sheet.',
+    'file' => 'recommends_wrec_isheet.inc',
+    'menu_name' => 'menu-professor',
+    'weight' => -6,
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+    'parent' =>  ' ',
+  );
+  $items['recommendations/recmd_wrec/assist'] = array(
+    'title' => 'Recpmmendlate Asistant',
+    'page callback' => 'recommends_wrec_assist',
+    'type' => MENU_NORMAL_ITEM,
+    'page arguments' => array(),
+    'description' => 'Display Recommendlate Asistant page.',
+    'file' => 'recommends_wrec_assist.inc',
+    'menu_name' => 'menu-professor',
+    'weight' => -6,
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+    'parent' =>  ' ',
+  );
+  
+  $items['recommends_wrec/arguments'] = array(
+    'page callback' => 'recommends_wrec_rcmdlink',
+    'file' => 'recommends_wrec_isheet.inc',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  
+
+  return $items;
+}
+
+/**
+ * Render a list of entries in the database.
+ */
+function recommends_wrec_list() {
+  $output = '';
+
+  // Get all entries in the recommends_st table.
+  if ($entries = recommends_wrec_entry_load()) {
+    $rows = array();
+    foreach ($entries as $entry) {
+      // Sanitize the data before handing it off to the theme layer.
+      $rows[] = array_map('check_plain', (array) $entry);
+    }
+    // Make a table for them.
+    $header = array(t('Id'), t('prefix'), t('firstname'), t('Initial'), t('lastname'), t('suffix'), t('Email'), t('School'), t('Dt Req.'), t('Master Doc.'), t('Comment'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+  else {
+    drupal_set_message(t('No entries have been added yet.'));
+  }
+  return $output;
+}
+
+/******************************************************************
+ * Create and display information sheet.
+ *******************************************************************/
+function recommends_wrec_form_sheet($form, &$form_state) {
+  $form = array(
+    '#prefix' => '<div id="infoform">',
+    '#suffix' => '</div>',
+  );
+
+  $entries = recommends_wrec_entry_load();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_st table."),
+    );
+    return $form;
+  }
+
+  foreach ($entries as $entry) {
+    $options[$entry->pid] = t("@pid: @firstname @lastname @initial (@s_email)", array(
+    '@pid' => $entry->pid,
+    '@prefix' => $entry->prefix,
+    '@firstname' => $entry->firstname,
+    '@lastname' => $entry->lastname, 
+     '@initial' => $entry->initial,
+     '@suffix' => $entry->suffix,
+    '@s_email' => $entry->s_email,
+    '@s_school' => $entry->s_school,
+    '@s_req_date' => $entry->s_req_date,
+    '@s_master_doc' => $entry->s_master_doc,
+     '@s_comments' => $entry->s_comments,
+     '@s_prof_comments' => $entry->s_comments
+    ));
+    $keyed_entries[$entry->pid] = $entry;
+  }
+  $default_entry = !empty($form_state['values']['pid']) ? $keyed_entries[$form_state['values']['pid']] : $entries[0];
+
+  $form_state['entries'] = $keyed_entries;
+
+  
+  $form['wrec'] = array(
+    '#type'  => 'fieldset',
+    '#title' => variable_get('recommends_professor'),
+  );
+  $form['wrec']['pid'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => $default_entry->pid,
+    '#ajax' => array(
+      'wrapper' => 'infoform',
+      'callback' => 'recommends_wrec_form_info_callback',
+    ),
+  );
+   $form['prefix'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Name prefix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->prefix,
+    '#disabled' => TRUE,
+  );
+  $form['firstname'] = array(
+    '#type' => 'hidden',
+    '#title' => t('First name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->firstname,
+    '#disabled' => TRUE,
+  );
+ 
+     $form['lastname'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Last name'),
+    '#size' => 15,
+    '#default_value' => $default_entry->lastname,
+    '#disabled' => TRUE,
+  );
+   $form['initial'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Initial'),
+    '#size' => 4,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->initial,
+  );
+   $form['suffix'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Name suffix'),
+    '#size' => 5,
+    '#default_value' => $default_entry->suffix,
+    '#disabled' => TRUE,
+  );
+  $form['s_email'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student Email'),
+    '#size' => 25,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_email,
+  );
+   $form['s_school'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Student School'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_school,
+  );
+   $form['s_req_date'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Date Student Requested'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_req_date,
+  );
+   $form['s_master_doc'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Master Document'),
+    '#size' => 10,
+    '#disabled' => TRUE,
+    '#default_value' => $default_entry->s_master_doc,
+  );
+   $form['s_comments'] = array(
+      '#type'  => 'hidden',
+  	  '#title' => t('Comments Regarding Request'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_comments,
+  );
+     $form['s_prof_comments'] = array(
+      '#type'  => 'hidden',
+  	  '#title' => t('Professor Comments Regarding Request'),
+    '#cols'  => 30,
+    '#disabled' => TRUE,
+    '#resizable'  => TRUE,
+     '#rows'  => 3,
+    '#default_value' => $default_entry->s_prof_comments,
+  );
+   
+ $form['wrec']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Display Info'),
+  );
+   
+  return $form;
+}
+
+/*************************************************************
+*					Info
+**************************************************************/
+function recommends_wrec_form_info_callback($form, $form_state) {
+  $entry = $form_state['entries'][$form_state['values']['pid']];
+  // Setting the #value of items is the only way I was able to figure out
+  // to get replaced defaults on these items. #default_value will not do it
+  // and shouldn't.
+  foreach (array('prefix', 'firstname', 'lastname', 'initial', 'suffix', 's_email', 's_school', 's_req_date', 's_master_doc', 's_comments', 's_prof_comments') as $item) {
+    $form[$item]['#value'] = $entry->$item;
+  }
+  
+  return $form;
+}
+
+
+/*************************************************************
+ * Submit handler for 'info entry' form.
+ ***************************************************************/
+function recommends_wrec_form_sheet_submit($form, $form_state){
+  global $user;
+
+  // Save the submitted entry.
+  $entry = array(
+     's_email' => $form_state['values']['s_email'],
+  );
+  
+  variable_set('recommends_wrec_selstudent', $entry['s_email']);
+  drupal_goto('recommends_wrec/isheet');
+  }
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

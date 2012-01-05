@@ -1,0 +1,686 @@
+<?php
+/**
+ * @file
+ * Main module for the Recommendations Application
+ *
+ */
+/******************************************************
+*	Establish whether a student or professor is logged in.
+*	Save the user role for online request, et al.
+********************************************************/
+function recommendations_init(){
+global $user;
+$roles = array();
+$roles = $user->roles;
+$uid = $user->uid;
+variable_set('uid', $uid);
+variable_set('roles_array', $roles);
+
+/*variable_set('site_name', 'Recommendations'); */
+
+if (in_array("professor", $roles)) {
+   variable_set('recommends_professor', $user->name);
+   variable_set('recommends_professor_email', $user->mail);
+   variable_set('recommends_student', '');
+/* variable_set('site_frontpage', 'recommendations/recommends_rpt/summary');*/
+   // Retrieve the professor profile to save the flags 
+	$entry = array();
+	$entries = recommends_prof_entry_load($entry);
+	
+	if (!empty($entries)) {
+	  $rows = array();
+	  foreach ($entries as $entry) {
+	// Sanitize the data before handing it off to the theme layer.
+	  $rows[] = array_map('check_plain',(array) $entry);
+	  }
+	  $professor = $rows[0]['p_email'];
+	  $flags = $rows[0]['p_flags'];
+	  variable_set('recommends_rcmd_type', substr($flags,4,1));
+	}
+}
+if (in_array("student", $roles)) {
+   variable_set('recommends_student', $user->name); 
+   
+   variable_set('recommends_professor', '');
+   variable_set('recommends_professor_email', '');
+   
+}
+
+
+
+
+
+ 
+  drupal_add_css(drupal_get_path('module', 'recommendations') .'/recommendations.css', 'module');
+}
+
+function recommendations_menu(){
+  
+  $items['recommendations'] = array(
+    'title' => 'Dashboard',
+    'page callback' => 'recommendations_dashboard', 
+    'access callback' => TRUE,
+    'parent' => '',
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  $items['recommendations/list'] = array(
+    'title' => 'Selection List',
+    'page callback' => 'recommendations_list', 
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['recommendations/cslist'] = array(
+    'title' => 'Course Selection List',
+    'page callback' => 'recommendations_cslist', 
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['recommendations/rclist'] = array(
+    'title' => 'School Selection List',
+    'page callback' => 'recommendations_rclist', 
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['recommendations/cplist'] = array(
+    'title' => 'Course Conducted Selection List',
+    'page callback' => 'recommendations_cplist', 
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['recommendations/cntlist'] = array(
+    'title' => 'Contacts Selection List',
+    'page callback' => 'recommendations_cntlist', 
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['recommendations/advhelp'] = array(
+    'title' => 'Recommendations System Help List',
+    'page callback' => 'recommendations_advhelp', 
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'menu_name' => 'menu-professor',
+    'expanded' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+/* generate output and stop executing other Drupal code */
+function recommendations_page($name) {
+  print "<h1>Recommendations</h1>";
+  die();
+}
+
+// FUNCTION TO CREATE DASHBOARD
+function recommendations_dashboard() {
+
+// If a user has a 'student' role then go to online request
+  if (variable_get('recommends_student') == 'student'){
+    drupal_goto('recommendations/recommends_req');
+  }
+  
+  drupal_set_title(t('Dashboard'));
+//  return theme('recommendations_dashboard');
+  return theme('recommendations_mob_dashboard');
+}
+
+/*********************************************************
+* Create the Select list of students,
+* Routine is called from the main dashboard.
+* 1. In recommendations_them.inc
+*  a) In recommendations_mob_dashboard Make the link 
+*     recommendations/list/xxxxxx where xxxx
+*     is the functions (i.e., courses, schools, students)
+*  b) In  recommendations_select_list Add the links
+*     (i.e., @courses, @schools, @ students) to @xxxx
+* 1. Sets the title of the next select student screen
+* 2. Selects all from the student table
+* 3. Returns the select_list theme to display llist of students
+*
+*********************************************************/
+function recommendations_list($function) {
+  switch ($function) {
+    case 'wrec':
+      drupal_set_title(t('Info Sheet'));
+      break;
+    case 'students':
+      drupal_set_title(t('Students Requested'));
+      variable_set('recommends_student_menu','Y'); /* initial req was student*/
+      break;
+    case 'schools':
+      drupal_set_title(t('Schools Requested'));
+      
+      break;
+    case 'courses':
+      drupal_set_title(t('Courses Enrolled'));
+     
+      break;  
+  }
+  
+   // Retrieve all the student reords
+      $entries = recommends_st_entry_load_list();
+  
+  if (empty($entries)) {
+    $msg = "No " . $function . " are in the database.<a href=?q=recommendations/recmd_st/students/add>Click here to add a student.</a>";
+    drupal_set_message('<pre>' . print_r($msg, TRUE) . '</pre>');
+    drupal_goto('recommendations');
+    return;
+  } 
+  
+//  return theme('recommendations_list');
+  return theme('recommendations_select_list',array('function' => $function, 'rows' => $entries));
+}
+
+/*********************************************************
+* Create the Course Select list of students,
+* Routine is called from the main dashboard.
+* 1. In recommendations_them.inc
+*  a) In recommendations_select_list Make the link 
+*     recommendations/cslist/xxxxxx where xxxx
+*     is the functions (i.e., courses, schools, students)
+*  b) In  recommendations_select_list Add the links
+*     (i.e., @courses, @schools, @ students) to @xxxx
+* 1. Sets the title of the next select student screen
+* 2. Selects all from the student table
+* 3. Returns the select_list theme to display llist of students
+*
+*********************************************************/
+function recommendations_cslist($s_email,$name) {
+  
+  drupal_set_title(t('Courses Select'));
+   
+   $name = str_replace( "%", " ", $name);
+   variable_set('recommends_name',$name);
+   variable_set('recommends_s_email',$s_email);
+  
+  // Retrieve all the student reords
+  $rows = array();
+  $entries = array();
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_cs_entry_load_mob($entry,$search);
+ /* 
+  $msg = "(210recommendations)This is entries - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
+*/
+  
+//  return theme('recommendations_cslist');
+$function = 'courses';  // not needed for course select
+  return theme('recommendations_select_cslist',array('function' => $function, 'rows' => $entries));
+}
+
+/*********************************************************
+* Create the School Select list of students,
+* Routine is called from the main dashboard.
+* 1. In recommendations_them.inc
+*  a) In recommendations_select_list Make the link 
+*     recommendations/rclist/xxxxxx where xxxx
+*     is the functions (i.e., courses, schools, students)
+*  b) In  recommendations_select_list Add the links
+*     (i.e., @courses, @schools, @ students) to @xxxx
+* 1. Sets the title of the next select student screen
+* 2. Selects all from the student table
+* 3. Returns the select_list theme to display llist of students
+*
+*********************************************************/
+function recommendations_rclist($s_email,$name) {
+  
+  drupal_set_title(t('School Select'));
+   
+   $name = str_replace( "%", " ", $name);
+   variable_set('recommends_name',$name);
+   variable_set('recommends_s_email',$s_email);
+  
+  // Retrieve all the student reords
+  $rows = array();
+  $entries = array();
+  $entry = array();
+  $search = $s_email;
+  $entries = recommends_rc_entry_load_mob($entry,$search);
+ /* 
+  $msg = "(367)This is entries - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
+*/ 
+  
+//  return theme('recommendations_cslist');
+$function = 'schools';  // not needed for course select
+  return theme('recommendations_select_rclist',array('function' => $function, 'rows' => $entries));
+}
+
+/**********************************************
+*     Professor Courses Conducted
+*
+************************************************/
+function recommendations_cplist($p_email,$name=NULL) {
+  
+  drupal_set_title(t('Courses Select'));
+   
+  // Retrieve all the course conducted reords
+  $rows = array();
+  $entries = array();
+  $entry = array();
+  $entries = recommends_cp_entry_load($entry);
+ /* 
+  $msg = "(367)This is entries - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
+*/
+  
+//  return theme('recommendations_cplist');
+$function = 'coursesinstr';  // not needed for course select
+  return theme('recommendations_select_cplist',array('function' => $function, 'rows' => $entries));
+}
+
+/**********************************************
+*     Professor Contacts
+*
+************************************************/
+function recommendations_cntlist($p_email) {
+  
+  drupal_set_title(t('Contacts Select'));
+   
+  // Retrieve all the contact reords
+  $rows = array();
+  $entries = array();
+  $entry = array();
+  $entries = recommends_cnt_entry_load($entry);
+ /* 
+  $msg = "(367)This is entries - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
+*/
+  
+//  return theme('recommendations_cntlist');
+$function = 'contacts';  // not needed for contacts select
+  return theme('recommendations_select_cntlist',array('function' => $function, 'rows' => $entries));
+}
+
+
+
+/*******************************************
+*   Register the themes
+*
+********************************************/
+function recommendations_theme() {
+  return array(
+    'recommendations_select_list' => array(
+      'file'      => 'recommendations.theme.inc',
+      'arguments' => array(),
+    ),
+    'recommendations_mob_dashboard' => array(
+      'file'      => 'recommendations.theme.inc',
+      'arguments' => array(),
+    ),
+    'recommendations_select_cslist' => array(
+      'file'      => 'recommendations.theme.inc',
+      'arguments' => array(),
+    ),
+    'recommendations_select_rclist' => array(
+      'file'      => 'recommendations.theme.inc',
+      'arguments' => array(),
+    ),
+    'recommendations_select_cplist' => array(
+      'file'      => 'recommendations.theme.inc',
+      'arguments' => array(),
+    ),
+    'recommendations_select_cntlist' => array(
+      'file'      => 'recommendations.theme.inc',
+      'arguments' => array(),
+    ),
+  );
+}
+
+/***********************************************
+* Add the correct professor email to the contact
+* form id: contact_site_form
+*
+************************************************/
+function recommendations_form_alter(&$form, $form_state, $form_id) {
+    // Normally a switch is used because you may want to alter more than
+    // one form and it is easy to add a new case for each form.
+    switch ($form_id) {
+      // This is our form ID.
+      case 'contact_site_form':
+        $msg = "(367)This is form - ";
+    /*	drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form, TRUE) . '</pre>');
+    	$form['cid']['#title'] = 'To Professor';  */
+        break;
+    }
+  }
+
+/**********************************************
+*			Cron Notification
+**************************************************/
+function recommendations_cron(){ 
+
+$entry = array();
+$entries = recommends_prof_entry_load($entry);
+
+if (!empty($entries)) {
+  recommendations_check_changes();
+  recommendations_check_status();
+}
+}
+
+/*****************************************************
+* Check for a new update of a school record.. This is
+* accomplished by comparing the timestamp of 
+* each school record withe the current tsacrivity
+* timesatamp field of the professor record. If the
+* school timestamp is later than the tsactivity
+* timestamp, an email is sent to the professor.
+*******************************************************/
+function recommendations_check_changes(){ 
+
+// Retrieve existing tsactivity value for 
+$entry = array();
+$entries = recommends_prof_entry_load($entry);
+$rows = array();
+foreach ($entries as $entry) {
+// Sanitize the data before handing it off to the theme layer.
+	$rows[] = array_map('check_plain',(array) $entry);
+}
+$last_tsactivity = $rows[0]['p_tsactivity'];
+variable_set('recommends_prof_notify_last', $last_tsactivity);
+$professor = $rows[0]['p_email'];
+
+$flags = $rows[0]['p_flags'];
+$altemail = $rows[0]['p_altemail'];
+ 
+// set variables to values that are for the professor's
+switch (substr($flags,0,1)) {
+    case 'Y':
+    	variable_set('recommends_prof_notify', 'FALSE');
+    	variable_set('recommends_alt_prof_notify', 'FALSE');
+      	break;
+    case 'N':
+        variable_set('recommends_prof_notify', 'TRUE');
+        variable_set('recommends_alt_prof_notify', 'FALSE');
+        break;
+    case 'T':
+        variable_set('recommends_prof_notify', 'TRUE');
+        variable_set('recommends_alt_prof_notify', 'TRUE');
+        variable_set('recommends_alt_prof_notify_email', $altemail);
+        break;
+  }
+
+
+
+// Execute select school timestampa > last tsactivity
+$entry2 = array();
+$entries= recommends_rc_entry_load_srch_tsa($entry2,$last_tsactivity);
+$rows = array();
+foreach ($entries as $entry2) {
+	// Sanitize the data before handing it off to the theme layer.
+	$rows[] = array_map('check_plain',(array) $entry2);
+}
+
+// Send email listing the selcted  schools
+if (sizeof($rows) <> 0) {
+ 	$email_values = array(
+    'email' => $professor,
+    'message' => "" . "\n"  
+  	);
+  
+   for ($i = 0; $i <= sizeof($rows)-1; $i++) {	
+   	$email_values['message'] = $email_values['message'] .
+  "\n" . "Student: " . $rows[$i]['firstname'] . " " . $rows[$i]['lastname'] ."\n";
+   	$email_values['message'] = $email_values['message'] . $rows[$i]['r_school'] .  "\n" .
+   	"School Program/Position: " .
+   	$rows[$i]['r_program'] .  "\n" .
+   	"School contact email: " .
+   	$rows[$i]['r_school_contact_email'] .  "\n" . 
+   	"School contact postal: " .
+   	$rows[$i]['r_school_contact_postal'] .  "\n"  .    	
+   	"Final Date required by school: " . 
+   	$rows[$i]['r_date_due_month'] . "/" .    
+   	$rows[$i]['r_date_due_day'] . "/" .   
+   	$rows[$i]['r_date_due_year'] .  "\n\n";
+   
+   };
+   
+   if (variable_get('recommends_prof_notify', 'TRUE') == 'TRUE') {
+   	if (variable_get('recommends_alt_prof_notify', 'FALSE') == 'TRUE') {
+  		$email_values['email'] = variable_get('recommends_alt_prof_notify_email');
+  	}
+   	$email_values['message_type'] = 'change_notification';
+   	email_mail_send_rec($email_values);
+   }
+
+// Write the timestamp on the tsactivity column of the user
+$format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  $entry1 = array();
+  $entry1['p_tsactivity'] = $timestamp;
+ $count = recommends_prof_entry_update_srch($entry1,$professor);		
+ }
+}
+
+
+/*****************************************************
+* Check for 'Closed' status in each school record.. This is
+* accomplished by selecting only status of 'Closed'  
+* for each school record. For status of 'Closed', save the
+* info in an array and then emaik the info to the student that
+* these schools have been sent the recommendation. Also,
+* the school recordmstatus is made 'Sent'
+*******************************************************/
+function recommendations_check_status(){ 
+
+// Retrieve the professor trcord to get default processing fkags 
+$entry = array();
+$entries = recommends_prof_entry_load($entry);
+$rows = array();
+foreach ($entries as $entry) {
+// Sanitize the data before handing it off to the theme layer.
+	$rows[] = array_map('check_plain',(array) $entry);
+}
+
+
+$professor = $rows[0]['p_email'];
+
+$flags = $rows[0]['p_flags'];
+$altemail = $rows[0]['p_altemail'];
+ 
+// set variables to values that are for the professor's
+switch (substr($flags,3,1)) {
+    case 'Y':
+    	variable_set('recommends_student_notify', 'FALSE');
+    	variable_set('recommends_alt_student_notify', 'FALSE');
+      	break;
+    case 'N':
+        variable_set('recommends_student_notify', 'TRUE');
+        variable_set('recommends_alt_student_notify', 'FALSE');
+        break;
+    case 'T':
+        variable_set('recommends_student_notify', 'TRUE');
+        variable_set('recommends_alt_student_notify', 'TRUE');
+        variable_set('recommends_alt_student_notify_email', $altemail);
+        break;
+  }
+
+
+
+// Execute select school status of closed
+
+$entry1 = array();
+$entry2 = array();
+$entries= recommends_rc_entry_load_srch_status($entry2,'Closed');
+$rows = array();
+
+foreach ($entries as $entry2) {
+	// Sanitize the data before handing it off to the theme layer.
+	$rows[] = array_map('check_plain',(array) $entry2);
+}
+
+// rows now contains closed recs sorted by r_email
+
+// Send email listing to each student with the selected  sent schools
+ 
+ $email_values = array();
+ $email_values['message'] = " ";
+for ($i = 0; $i <= sizeof($rows)-1; $i++) {
+  
+  $current_st = $rows[0]['r_email'];
+  $old_st = $rows[0]['r_email'];
+	
+  while ($current_st == $old_st) {
+	
+	// Put in email output array
+		
+   	$email_values['message'] = 	$email_values['message'] . 
+"\n" . "Student: " . $rows[$i]['firstname'] . " " . $rows[$i]['lastname'] ."\n";
+   	$email_values['message'] = $email_values['message'] . $rows[$i]['r_school'] .  "\n" .
+   	"School Program/Position: " .
+   	$rows[$i]['r_program'] .  "\n" .
+   	"School contact email: " .
+   	$rows[$i]['r_school_contact_email'] .  "\n" . 
+   	"School contact postal: " .
+   	$rows[$i]['r_school_contact_postal'] .  "\n"  .    	
+   	"Final Date required by school: " . 
+   	$rows[$i]['r_date_due_month'] . "/" .    
+   	$rows[$i]['r_date_due_day'] . "/" .   
+   	$rows[$i]['r_date_due_year'] .  "\n\n"; 
+ 	
+ 	// Write the school record
+  $format = variable_get('date_format_long', 'l, F j, Y - H:i');
+  date_default_timezone_set('America/New_York');
+  $date = date("c") ;
+  $timestamp = substr($date,0,19);
+  $entry1 = array();
+  $entry1['r_timestamp'] = $timestamp;
+ 	
+ 	$entry1['r_status'] = 'Sent';
+    $count = recommends_rc_entry_update_srch($entry1,$professor,$rows[$i]['r_email'], $rows[$i]['r_school']);
+ 	$i++;
+ 	if ($i <= sizeof($rows) - 1) {
+ 	  $current_st = $rows[$i]['r_email'];
+ 	} else {
+ 	  $current_st = "";
+ 	}
+ 	
+  };
+  // send email
+  if (variable_get('recommends_student_notify', 'TRUE') == 'TRUE') {
+   	if (variable_get('recommends_alt_student_notify', 'FALSE') == 'TRUE') {
+  		$email_values['email'] = variable_get('recommends_alt_student_notify_email');
+  	}
+   	$email_values['message_type'] = 'sent_notification';
+   	email_mail_send_rec($email_values); 	
+   }
+   
+  $i--;  // adjust for for loop
+  $email_values['message'] = " ";
+ $old_st = $current_st;
+} // end the for loop
+
+}
+/***************************************************
+* This routine is called wheb the drupal_mail command
+* is executed.
+*
+****************************************************/
+function recommendations_mail($key, &$message, $params) {
+  global $user;
+
+  $options = array(
+    'langcode' => $message['language']->language,
+  );
+
+  switch ($key) {
+    // Send a simple message from the contact form.
+    case 'change_notification':
+      $message['subject'] = t('Recommendations Alert Notification', $options);
+      
+      $message['body'][] = t('The following School records have been updatd since your last notification on  ') . variable_get('recommends_prof_notify_last');
+      
+      $message['body'][] = check_plain($params['message']); 
+        
+      break;
+      
+    case 'sent_notification':
+      $message['subject'] = t('Recommendation Sent Notification', $options);
+      
+      $message['body'][] = t('The following School have been sent a recommendation.');
+      
+      $message['body'][] = check_plain($params['message']); 
+        
+      break;
+  }
+}
+
+/************************************************************
+* This routine is called by recommendations function.
+*
+* Send an e-mail.
+*
+*************************************************************/
+function email_mail_send_rec($email_values) {
+  
+  $module = 'recommendations';
+  
+  $key = $email_values['message_type'];
+
+  $to = $email_values['email'];
+  
+  $from = variable_get('recommends_prof_email');
+  
+  $params = $email_values;
+
+  $language = language_default();
+
+  $send = TRUE;
+   
+  $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
+  
+  $message = 'Cron ' . $key . ' sent to ' . $to;
+
+  watchdog('recommendations', $message, array(), WATCHDOG_DEBUG);
+
+}
+
+/*************************************************************
+ *    Display help page
+ ***************************************************************/
+function recommendations_advhelp(){
+  drupal_set_title('Recommendations System Help');
+
+  
+  $module = 'recommendations';
+  $topic = 'recommendations-overview';
+  $type = 'title';
+  
+  $output = theme('advanced_help_topic', array(
+  'module' => $module, 
+  'topic' => $topic,
+  'type' => $type,
+  ));
+  
+  return $output;
+}  
+  
+
+
+
+
+

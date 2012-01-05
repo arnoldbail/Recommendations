@@ -1,0 +1,357 @@
+<?php
+
+
+function recommends_req_menu() {
+  $items = array();
+  $items['recommendations/recommends_req'] = array(
+    'title' => 'Online Entry',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_req_form_profselect'),
+    'menu_name' => 'menu-student',
+    'weight' => -15,
+    'access callback' => TRUE,   
+  );
+  $items['recommends_req/profemail'] = array(
+    'title' => 'Email Professor',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_req_form_profemail'),
+    'access callback' => TRUE,
+    'description' => 'Send Email to the Professor.',
+  );
+  
+
+  $items['recommends_req/wizard'] = array(
+    'title' => 'Recommendation Online Entry',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_req_wizard'),
+    'access callback' => TRUE,
+    
+    'description' => 'Wizard to request a recommendaion.',
+    'file' => 'recommends_req_wizard.inc',
+  );
+  $items['recommends_req/wizard/addschools'] = array(
+    'title' => ' Online Additional Schools',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recommends_req_addschools'),
+    'access callback' => TRUE,
+    
+    'description' => 'Wizard to add schools to request.',
+    'file' => 'recommends_req_addschools.inc',
+  );
+  $items['recommends_req/wizard/intro'] = array(
+    'title' => ' Online Additional Schools',
+    'page callback' => 'recommends_req_intro',
+    'access callback' => TRUE,
+    
+    'description' => 'Wizard to add schools to request.',
+    'file' => 'recommends_req_addschools.inc',
+  );
+  
+  return $items;
+}
+
+function recommends_req_intro() {
+ 
+  drupal_set_title('Online Request Recommendation');
+  
+  $professor = variable_get('recommends_req_student_professor');
+  
+  return array('#markup' => t('<h3>The professor you have selected is Professor ' . $professor . '</h3><p>The online "Request a Recommenddation" form is provided to facilitate the recommendation process. In the following four steps, you will be requested to provide:</p><ul><li> Your name and email address</li><li>List of schools or institutions you wish to send the recommendation; and, any school contact information you may have.</li><li>List of courses and/or activities in which you have been enrolled or participated that were conducted by Professor ' . $professor . '</li><li>The information you have entered will be displayed at the completion. You can, at that point, eithe cancel the request or press "Finish" to complete the request. You will be sent an email confirming your request and displaying the information you have entered.</li></ul><p>All requests must be made no later than one month before the earliest due date of the recommendation. 
+  Upon completion, if there is any additional information and/or documents that the professor may need, use the "Email Professor" link above to send them. </p><p>Professor ' . $professor . ' will notify you by email of his acceptance or rejection.</p><p align=center><a href="@online">Request a Recommendation</a></p><p align=center><a href="@added">Submit additional schools for Recommendations</a></p>', 
+array(
+'@online' => url('recommends_req/wizard', array('absolute' => TRUE)),
+'@added' => url('recommends_req/wizard/addschools', array('absolute' => TRUE))
+)));
+
+ 
+}
+
+
+function recommends_req_form_profselect($form, &$form_state) {
+/*
+$msg = "(53)This is form - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form, TRUE) . '</pre>');
+*/
+
+drupal_set_title('Online Request Recommendation');
+
+ $form['req'] = array(
+    '#type'  => 'fieldset',
+    '#title' => 'Select your professor.',
+  );
+ $form['req']['intro'] = array(
+    '#prefix' => '<div id="req_viewform"><p>Welcome to the Online Request for a Recommendation page. Select the professor who has approved your request for a recommendation. Then press Continue!</p> ',
+    '#suffix' => '</div>',
+  );
+
+  $entries = recommends_prof_entry_load_all();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_prof table."),
+    );
+    return $form;
+  }
+  
+  $options = array('Select' => 'Select');
+
+  foreach ($entries as $entry) {
+    $options[$entry->p_email] = t("@p_name", array(
+    '@p_pid' => $entry->p_pid, 
+    '@p_email' => $entry->p_email,
+    '@p_name' => $entry->p_name,
+    '@p_altemail' => $entry->p_altemail,
+    '@p_flags' => $entry->p_flags,
+    '@p_tsactivity' => $entry->p_tsactivity,
+     '@p_onlinedescr' => $entry->p_onlinedescr,
+     '@p_timestamp' => $entry->p_timestamp
+    ));
+    $keyed_entries[$entry->p_email] = $entry;
+  }
+  
+  $form_state['entries'] = $keyed_entries;
+
+  $form['req']['professor'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+  );
+
+   $form['req']['Continue'] = array(
+      '#type' => 'submit',
+      '#value' => t('Continue'),
+      '#redirect' => 'recommends_req_intro',
+    );
+return $form;
+}
+
+function recommends_req_form_profselect_validate($form, &$form_state) { 
+/*
+$msg = "(53)This is form_state  - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state['values'], TRUE) . '</pre>');
+    
+*/    
+    if ($form_state['values']['professor'] == "Select" ) {
+      form_set_error(" ", 'Please select the professor. ');
+  }
+
+}
+	
+function recommends_req_form_profselect_submit($form, $form_state) {
+/*
+$msg = "(81)This is form_state.. - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state['values']['professor'], TRUE) . '</pre>');
+*/
+variable_set('recommends_student_professor_email',$form_state['values']['professor']);
+
+//retrieve professor name
+$entry = array();
+$search = $form_state['values']['professor'];
+variable_set('recommends_professor_email',$search);
+
+$entries = recommends_prof_entry_load_req_srch_email($entry,$search);
+$rows = array();
+foreach ($entries as $entry) {
+// Sanitize the data before handing it off to the theme layer.
+	$rows[] = array_map('check_plain',(array) $entry);
+}
+
+variable_set('recommends_req_student_professor',$rows[0]['p_name']);
+
+drupal_goto('recommends_req/wizard/intro');
+
+
+}
+
+/******************************************************
+*  New Email professor w/attachments
+*
+******************************************************/
+function recommends_req_form_profemail($form, &$form_state) {
+
+require_once('recommends_req_attachment_email.inc');
+/*
+$to="arnoldbail@gmail.com";
+$from="arnoldbail@jetpgmr.com";
+$subject="Check out this report!";
+$message="Yo! Check out this report!";
+$attachment = array(
+  'url' => '~/documents/report.pdf',
+  'filename' => 'report.pdf',
+);
+
+$email = new AttachmentEmail($to, $from, $subject, $message, $attachment);
+$email->send();
+*/
+/*
+$msg = "(183)This is form - ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form, TRUE) . '</pre>');
+*/
+  $entries = recommends_prof_entry_load_all();
+  $keyed_entries = array();
+  if (empty($entries)) {
+    $form['no_values'] = array(
+      '#value' => t("No entries exist in the table recommends_prof table."),
+    );
+    return $form;
+  }
+  
+  
+
+  foreach ($entries as $entry) {
+    $options[$entry->p_email] = t("@p_name", array(
+    '@p_pid' => $entry->p_pid, 
+    '@p_email' => $entry->p_email,
+    '@p_name' => $entry->p_name,
+    '@p_altemail' => $entry->p_altemail,
+    '@p_flags' => $entry->p_flags,
+    '@p_tsactivity' => $entry->p_tsactivity,
+     '@p_onlinedescr' => $entry->p_onlinedescr,
+     '@p_timestamp' => $entry->p_timestamp
+    ));
+    $keyed_entries[$entry->p_email] = $entry;
+  }
+  
+  $form_state['entries'] = $keyed_entries;
+
+  $form['to'] = array(
+    '#type' => 'select',
+    '#title' => t('Professor'),
+    '#options' => $options,
+    '#required'  =>TRUE,
+  );
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Name'),
+    '#size'  =>25,
+    '#required'  =>TRUE,
+  );
+  $form['from'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Student Email'),
+    '#size'  =>25,
+    '#required'  =>TRUE,
+  );
+  $form['subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#size'  =>25,
+    '#default_value' => 'Student Information',
+  );
+  $form['message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message'),
+    '#cols'  => 30,
+    '#prefix' => '<div id="formlimit">',
+    '#suffix' => '</div>',
+    '#resizable'  => TRUE,
+  );
+  $form['req'] = array(
+    '#type'  => 'fieldset',
+    '#title' => 'Attachments (Optional)',
+  );
+  $form['file1'] = array(
+    '#type' => 'file',
+    '#title' => t('Attachment 1'),
+    '#size'  =>20,
+  );
+  $form['file2'] = array(
+    '#type' => 'file',
+    '#title' => t('Attachment 2'),
+    '#size'  =>20,
+  );
+  $form['file3'] = array(
+    '#type' => 'file',
+    '#title' => t('Attachment 3'),
+    '#size'  =>20,
+  );
+  $form['file4'] = array(
+    '#type' => 'file',
+    '#title' => t('Attachment 4'),
+    '#size'  =>20,
+  );
+  $form['file5'] = array(
+    '#type' => 'file',
+    '#title' => t('Attachment 5'),
+    '#size'  =>20,
+  );
+  $form['send'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send'),
+  );
+  return $form;
+}
+
+function recommends_req_form_profemail_submit($form, &$form_state) {
+  //Include Attachment Emailer
+/*
+module_load_include('php','mymodule', 'attachment_email');
+*/
+  require_once('recommends_req_attachment_email.inc');
+  $to = $form_state['values']['to'];
+  $name = $form_state['values']['name'];
+  $from = $form_state['values']['from'];
+  $subject = $form_state['values']['subject'];
+  $message = $form_state['values']['message'];
+  $attachment1 = file_save_upload('file1');
+  $attachment2 = file_save_upload('file2');
+  $attachment3 = file_save_upload('file3');
+  $attachment4 = file_save_upload('file4');
+  $attachment5 = file_save_upload('file5');
+
+$attachments = array(); 
+if ($attachment1 != NULL) {
+$attachments[] = array(
+        'name' => $attachment1->filename,
+        'path' => $attachment1->uri,
+        'type' => 'text/plain',
+      );
+ }
+ if ($attachment2 != NULL) {
+ $attachments[] = array(
+        'name' => $attachment2->filename,
+        'path' => $attachment2->uri,
+        'type' => 'text/plain',
+      );
+}
+if ($attachment3 != NULL) {
+$attachments[] = array(
+        'name' => $attachment3->filename,
+        'path' => $attachment3->uri,
+        'type' => 'text/plain',
+      );
+}
+if ($attachment4 != NULL) {
+$attachments[] = array(
+        'name' => $attachment4->filename,
+        'path' => $attachment4->uri,
+        'type' => 'text/plain',
+      );
+}
+if ($attachment5 != NULL) {
+$attachments[] = array(
+        'name' => $attachment5->filename,
+        'path' => $attachment5->uri,
+        'type' => 'text/plain',
+      );
+}
+
+$message = 'Student name: ' . $name . "\n\n" . $message;
+//Send Email!
+  $email = new AttachmentEmail($to, $from, $subject, $message, $attachments);
+  $email->send();
+  $msg = "The Email has been sent to ";
+    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($to, TRUE) . '</pre>');
+
+  //perform any addition logic....
+
+}
+
+
+
+
+
+
+
+
+
