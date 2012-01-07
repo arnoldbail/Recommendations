@@ -219,10 +219,6 @@ function recommendations_cslist($s_email,$name) {
   $entry = array();
   $search = $s_email;
   $entries = recommends_cs_entry_load_mob($entry,$search);
- /* 
-  $msg = "(210recommendations)This is entries - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
-*/
   
 //  return theme('recommendations_cslist');
 $function = 'courses';  // not needed for course select
@@ -256,11 +252,7 @@ function recommendations_rclist($s_email,$name) {
   $entries = array();
   $entry = array();
   $search = $s_email;
-  $entries = recommends_rc_entry_load_mob($entry,$search);
- /* 
-  $msg = "(367)This is entries - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
-*/ 
+  $entries = recommends_rc_entry_load_mob($entry,$search); 
   
 //  return theme('recommendations_cslist');
 $function = 'schools';  // not needed for course select
@@ -280,10 +272,6 @@ function recommendations_cplist($p_email,$name=NULL) {
   $entries = array();
   $entry = array();
   $entries = recommends_cp_entry_load($entry);
- /* 
-  $msg = "(367)This is entries - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
-*/
   
 //  return theme('recommendations_cplist');
 $function = 'coursesinstr';  // not needed for course select
@@ -303,10 +291,6 @@ function recommendations_cntlist($p_email) {
   $entries = array();
   $entry = array();
   $entries = recommends_cnt_entry_load($entry);
- /* 
-  $msg = "(367)This is entries - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>'); 
-*/
   
 //  return theme('recommendations_cntlist');
 $function = 'contacts';  // not needed for contacts select
@@ -359,9 +343,6 @@ function recommendations_form_alter(&$form, $form_state, $form_id) {
     switch ($form_id) {
       // This is our form ID.
       case 'contact_site_form':
-        $msg = "(367)This is form - ";
-    /*	drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form, TRUE) . '</pre>');
-    	$form['cid']['#title'] = 'To Professor';  */
         break;
     }
   }

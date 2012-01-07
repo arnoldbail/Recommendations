@@ -128,10 +128,6 @@ function theme_recommendations_select_list($variables) {
    variable_set('recommends_s_email',"");
     
    $rows = $variables['rows'];
-  /* 
-   $msg = "(in theme)This is variables - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($variables, TRUE) . '</pre>');
-   */
 
     $list = '<h3 align=center>Students</h3><ul class="rollover">';
     for ($i = 0; $i <= sizeof($rows)-1; $i++) {
@@ -281,11 +277,7 @@ function theme_recommendations_select_cplist($variables) {
  // List is in wrapper div below.
  
    $function = $variables['function'];
-   $rows = $variables['rows'];
- /*  
-   $msg = "(in theme)This is variables - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($variables, TRUE) . '</pre>');
-  */ 
+   $rows = $variables['rows']; 
 
     $list = '<h3 align=center>Courses Conducted</h3><ul class="rollover">';
     for ($i = 0; $i <= sizeof($rows)-1; $i++) { 	
@@ -334,11 +326,7 @@ function theme_recommendations_select_cntlist($variables) {
  // List is in wrapper div below.
  
    $function = $variables['function'];
-   $rows = $variables['rows'];
- /*  
-   $msg = "(in theme)This is variables - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($variables, TRUE) . '</pre>');
-  */ 
+   $rows = $variables['rows']; 
 
     $list = '<h3 align=center>Contacts</h3><ul class="rollover">';
     for ($i = 0; $i <= sizeof($rows)-1; $i++) { 	

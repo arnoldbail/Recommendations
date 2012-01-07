@@ -23,9 +23,9 @@ if (variable_get('recommends_student') != "") {
 }
 
 if (empty($entries)) {
-	$professor = "arnoldbail@gnail.com"; //for now, the default
+	$professor = "admin@demo.edu"; //for now, the default
 	$flags = "NNNN";   // for now, the default
-	$altemail = 'arnoldbail@gmail.com'; //for now, the default
+	$altemail = 'admin@demo.edu'; //for now, the default
 } else {
 	$rows = array();
 	foreach ($entries as $entry) {
@@ -534,10 +534,6 @@ function recommends_req_wizard_schools_info_validate($form, &$form_state) {
     $d2=mktime(0,0,0,$date_due_month,$date_due_day,$date_due_year);
     $d1=time();
     $days_diff = floor(($d2-$d1)/86400);
-/*    
-    $msg = "This is days_diff - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($days_diff, TRUE) . '</pre>'); 
-*/
     if ($days_diff < 30 ) {
       form_set_error("schname][$i][r_date_due", 'The due date must be at least 30 days from today. Please contact the professor to discuss exceptions.');
     }
@@ -650,17 +646,7 @@ function recommends_req_wizard_courses_info($form, &$form_state) {
 }
 
 function recommends_req_wizard_courses_info_validate($form, &$form_state) {
-/*    
-  $msg = "This is in course validation - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state, TRUE) . '</pre>'); 
-  
-   for ($i = 1; $i <= $form_state['num_courses']; $i++) { 
-     if ($form_state['values']['crsname'][$i]['i_pid'] == 0 ) {
-      form_set_error(" ", 'Please select the course/activity enrolled.. ');
-      }
 
-   }
-*/
 }
 
 /**
@@ -1050,11 +1036,6 @@ $msg ="Your information has been successfully entered.";
    	$output_courses[$i]['c_year']  . '\n\n' . $output_courses[$i]['c_other'] ;
    
    };
-
- /*  
-   $msg = "(749)This is email_values - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($email_values, TRUE) . '</pre>'); 
- */ 
   
   } /* end of no errror in student information block  */
  

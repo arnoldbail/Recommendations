@@ -113,6 +113,16 @@ function recommendations_setup_create_custom()
     $menu['title'] = "Student";
     $menu['description'] = "The <em>Student role menu for the Recommendations application.";
     menu_save($menu);
+    
+   menu_link_delete($mlid=NULL,'recommends_req/profemail');;
+   // Add a Email Professor menu link to the Student menu.
+   $item = array(
+    'link_path' => 'recommends_req/profemail', 
+    'link_title' => 'Email Professor', 
+    'menu_name' => 'menu-student',
+  );
+  menu_link_save($item);
+    
     $menu['menu_name'] = "menu-professor";
     $menu['title'] = "Professor";
     $menu['description'] = "The <em>Professor role menu for the Recommendations application.";

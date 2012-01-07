@@ -95,7 +95,7 @@ function recommends_prof_entry_load($entry = array()) {
   $select = db_select('recommends_prof');
   $select->fields('recommends_prof'); 
   $select->orderby('p_name', 'ASC');
-  if (variable_get('recommends_professor') <> 'arnoldbail') {
+  if (variable_get('recommends_professor') <> 'admin') {
     $select->condition('p_email',variable_get('recommends_professor_email'), '=');
   }
 
@@ -558,12 +558,6 @@ function recommends_prof_form_update($form, &$form_state) {
   $default_entry = !empty($form_state['values']['p_pid']) ? $keyed_entries[$form_state['values']['p_pid']] : $entries[0];
 
   $form_state['entries'] = $keyed_entries;
-/*  
-  $msg = "(448)This is default_entry - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>');
-*/
-  
-  
   
   $form['p_pid'] = array(
     '#type' => 'hidden',
@@ -1247,10 +1241,6 @@ function recommends_prof_form_update_callback($form, $form_state) {
   // and shouldn't.
   foreach (array( 'p_email', 'p_name', 'p_altemail', 'p_flags', 'p_tsactivity', 'p_onlinedescr', 'p_school', 'p_school_logo', 'p_college', 'p_podition', 'p_internal', 'p_phone', 'p_phone', 'p_school_letter', 'p_timestamp') as $item) {
     $form[$item]['#value'] = $entry->$item;
- /*   
-    $msg = "(712)This is form-item-#values - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form[$item]['#value'], TRUE) . '</pre>');
-*/
   }
   
   return $form;

@@ -13,9 +13,9 @@ if (variable_get('recommends_student') != "") {
 }
 
 if (empty($entries)) {
-	$professor = "arnoldbail@gnail.com"; //for now, the default
+	$professor = "admin@demo.edu"; //for now, the default
 	$flags = "NNN";   // for now, the default
-	$altemail = 'arnoldbail@gmail.com'; //for now, the default
+	$altemail = 'admin@demo.edu'; //for now, the default
 } else {
 	$rows = array();
 	foreach ($entries as $entry) {
@@ -505,10 +505,7 @@ function recommends_req_addschools_schools_info_validate($form, &$form_state) {
     $d2=mktime(0,0,0,$date_due_month,$date_due_day,$date_due_year);
     $d1=time();
     $days_diff = floor(($d2-$d1)/86400);
-/*    
-    $msg = "This is days_diff - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($days_diff, TRUE) . '</pre>'); 
-*/
+
     if ($days_diff < 30 ) {
       form_set_error("schname][$i][r_date_due", 'The due date must be at least 30 days from today. Please contact Dr. Bailey to discuss exceptions.');
     }
@@ -764,13 +761,7 @@ $msg ="Your information has been successfully entered.";
    	$output_schools[$i]['r_date_due_day'] . "/" .   
    	$output_schools[$i]['r_date_due_year'] .  "\n\n";
    
-   };
-
-
- /*  
-   $msg = "(749)This is email_values - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($email_values, TRUE) . '</pre>'); 
- */ 
+   }; 
  
   	email_mail_send($email_values);
   	

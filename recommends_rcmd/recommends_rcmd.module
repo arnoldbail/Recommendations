@@ -87,10 +87,6 @@ function recommends_rcmd_field_formatter_info() {
  * during node creation.
  */
 function recommends_rcmd_field_formatter_view($object_type, $object, $field, $instance, $langcode, $items, $display) {
-/*
-$msg = "(rcmd)This is XXXXXitems  - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($items, TRUE) . '</pre>'); 
-*/
     
 $items[0]['value'] = variable_get('recommendlate_export_file');
 $items[0]['format'] = '';
@@ -373,18 +369,7 @@ $c3 = '" href="?q=recommendations/recmd_wrec/assist/gammaepsilon@demo.edu/Epsilo
   );
 }  
   
-  
-  
- 
-/*  
-  $msg = "(344)This is node - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($node, TRUE) . '</pre>'); 
-*/
 }
-
-
-
-
 
 /***********Used to create export file *************************
 * When the save is depressed ti save the node, this hooj is
@@ -394,12 +379,8 @@ function recommends_rcmd_node_presave($node) {
 
   $nid = $node->nid;
   $title = $node->title;
-  $data = $node->body['und'][0]['value'];
-  
-  $msg = "(367)This is default_entry - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>'); 
+  $data = $node->body['und'][0]['value']; 
 
-////////////////////////////////////////////////////
 $wktitle = str_replace( " ", "-", $title);
   
   

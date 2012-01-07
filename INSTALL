@@ -6,7 +6,7 @@ Steps to installation checklist:
 
 - Install and enable the Recommendation module package.
 
-- Login as admin. Click dashboard and run the setup demo icons. This creates the professor and student roled, the drdemo, drdemo2 and student usernames and the professor and studedent menus. The setup2 icon does the same thing; but, for different usernames.
+- Login as admin. Click dashboard and run either or both the setup demo icons. This creates the professor and student roled, the drdemo, drdemo2 and student usernames and the professor and studedent menus. The setup2 icon does the same thing; but, for different usernames.
 
 - Content type->recommendlate->edit, disable all of the comment
 	  settings.

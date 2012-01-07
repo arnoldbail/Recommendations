@@ -362,11 +362,6 @@ function recommends_cnt_form_update($form, &$form_state) {
   $default_entry = !empty($form_state['values']['n_pid']) ? $keyed_entries[$form_state['values']['n_pid']] : $entries[0];
 
   $form_state['entries'] = $keyed_entries;
-/*  
-  $msg = "(448)This is default_entry - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>');
-*/
-  
   
   $form['edit'] = array(
     '#type'  => 'fieldset',
@@ -685,10 +680,6 @@ function recommends_cnt_form_update_callback($form, $form_state) {
   // and shouldn't.
   foreach (array( 'n_email', 'n_site', 'n_siteurl', 'n_username', 'n_password', 'n_notes', 'n_timestamp') as $item) {
     $form[$item]['#value'] = $entry->$item;
- /*   
-    $msg = "(712)This is form-item-#values - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form[$item]['#value'], TRUE) . '</pre>');
-*/
   }
   
   return $form;

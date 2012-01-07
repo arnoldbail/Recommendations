@@ -818,11 +818,7 @@ function recommends_rc_form_view($form, &$form_state,$s_email=NULL,$name=NULL,$s
       $s_email = variable_get('recommends_s_email');
       $school = variable_get('recommends_item');
   }
-  
-/*  
-  $msg = "(850)This is variable_get recommends_item - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r(variable_get('recommends_item'), TRUE) . '</pre>'); 
-*/  
+    
   $form = array(
     '#prefix' => '<div id="viewform">',
     '#suffix' => '</div>',
@@ -1041,17 +1037,8 @@ function recommends_rc_form_delete($form, &$form_state) {
   $x_date_due_year = $entry->r_date_due_year;
   $x_date_due_day = $entry->r_date_due_day;
   $x_date_due_month = $entry->r_date_due_month;
-  
-  /*
-  $msg = "This is default_entry - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($default_entry, TRUE) . '</pre>'); 
-  */
 
   $form_state['entries'] = $keyed_entries;
-  /*
-  $msg = "This is form_state-entries - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state['entries'], TRUE) . '</pre>'); 
-*/
   $form['delete'] = array(
     '#type'  => 'fieldset',
     '#title' => $name,

@@ -573,10 +573,6 @@ function recommends_cp_form_view($form, &$form_state,$courseinstr=NULL,$semester
 
   $entry = array();
   $entries = recommends_cp_entry_load_mob($entry,$courseinstr,$semester,$year);
- /* 
-  $msg = "(517)This is entries - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($entries, TRUE) . '</pre>');
- */
   $keyed_entries = array();
   if (empty($entries)) {
     $form['no_values'] = array(

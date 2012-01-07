@@ -598,10 +598,6 @@ function recommends_cs_form_view($form, &$form_state, $s_email=NULL,$name=NULL,$
   }
   
   $course = str_replace( "_", " ",$course);
-/*  
-  $msg = "(517)This is variable_get recommends_s_email - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r(variable_get('recommends_s_email'), TRUE) . '</pre>'); 
-*/
   
   $form = array(
     '#prefix' => '<div id="viewform">',

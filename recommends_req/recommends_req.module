@@ -68,10 +68,6 @@ array(
 
 
 function recommends_req_form_profselect($form, &$form_state) {
-/*
-$msg = "(53)This is form - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form, TRUE) . '</pre>');
-*/
 
 drupal_set_title('Online Request Recommendation');
 
@@ -125,11 +121,7 @@ return $form;
 }
 
 function recommends_req_form_profselect_validate($form, &$form_state) { 
-/*
-$msg = "(53)This is form_state  - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state['values'], TRUE) . '</pre>');
-    
-*/    
+   
     if ($form_state['values']['professor'] == "Select" ) {
       form_set_error(" ", 'Please select the professor. ');
   }
@@ -137,10 +129,7 @@ $msg = "(53)This is form_state  - ";
 }
 	
 function recommends_req_form_profselect_submit($form, $form_state) {
-/*
-$msg = "(81)This is form_state.. - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state['values']['professor'], TRUE) . '</pre>');
-*/
+
 variable_set('recommends_student_professor_email',$form_state['values']['professor']);
 
 //retrieve professor name
@@ -169,23 +158,7 @@ drupal_goto('recommends_req/wizard/intro');
 function recommends_req_form_profemail($form, &$form_state) {
 
 require_once('recommends_req_attachment_email.inc');
-/*
-$to="arnoldbail@gmail.com";
-$from="arnoldbail@jetpgmr.com";
-$subject="Check out this report!";
-$message="Yo! Check out this report!";
-$attachment = array(
-  'url' => '~/documents/report.pdf',
-  'filename' => 'report.pdf',
-);
 
-$email = new AttachmentEmail($to, $from, $subject, $message, $attachment);
-$email->send();
-*/
-/*
-$msg = "(183)This is form - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form, TRUE) . '</pre>');
-*/
   $entries = recommends_prof_entry_load_all();
   $keyed_entries = array();
   if (empty($entries)) {
