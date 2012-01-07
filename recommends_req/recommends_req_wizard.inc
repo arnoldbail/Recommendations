@@ -245,25 +245,23 @@ if ($form_state['step'] == 1) {
    }
     
    for ($i = 1; $i <= $form_state['num_courses']; $i++) {
-  /*
-  		$msg = "(251 - _next_submit)This is fgorm_state    - ";
-    drupal_set_message('<pre>' . print_r($msg, TRUE)  . print_r($form_state, TRUE) . '</pre>');
-  */		
+  		$pid = $form_state['step_information'][3]['stored_values']['crsname'][$i]['i_pid'];
+  		
+  	
+  		
+  		if (in_array($pid, $form_state['entries'])) {
   		
   		
-  		$pid = $form_state['step_information'][3]['stored_values']['crsname'][$i]['i_pid'];		
-  		
-  		if ($form_state['entries'][$pid]->i_course <> "") {
   		  $form_state['coursenum'][$i] = $form_state['entries'][$pid]->i_course;
   		  $form_state['coursesemester'][$i] = $form_state['entries'][$pid]->i_semester;
   		  $form_state['courseyear'][$i] = $form_state['entries'][$pid]->i_year;
+  		  $form_state['courseother'][$i] = " ";
   		} else
   		{
   		  $form_state['coursenum'][$i] = $form_state['complete form']['crsname'][1]['i_pid']['#options'][$pid];
   		  $form_state['coursesemester'][$i] = "NA";
   		  $form_state['courseyear'][$i] = "NA";
-  		  $form_state['courseother'][$i] = $form_state['step_information'][3]['stored_values']['crsname'][$i]['i_other'];
-  		  
+  		  $form_state['courseother'][$i] = $form_state['step_information'][3]['stored_values']['crsname'][$i]['i_other']; 
   		}
   		
   		
@@ -812,7 +810,7 @@ function recommends_req_wizard_verification($form, &$form_state) {
    	"Semester: " . 
    	$output_courses[$i]['c_semester'] .
    	"  Year: " . 
-   	$output_courses[$i]['c_year'] ;
+   	$output_courses[$i]['c_year'] . "\n\n" . $output_courses[$i]['c_other'] ;
    
    }; 
    
@@ -1049,7 +1047,7 @@ $msg ="Your information has been successfully entered.";
    	"  Semester: " . 
    	$output_courses[$i]['c_semester'] .  "       " .
    	"  Year: " . 
-   	$output_courses[$i]['c_year'] ;
+   	$output_courses[$i]['c_year']  . '\n\n' . $output_courses[$i]['c_other'] ;
    
    };
 
