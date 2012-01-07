@@ -1,10 +1,8 @@
 Steps to installation checklist:
 
-- Install Adaptivetheme and Sky sub-themes.
+- Install Adaptivetheme and Sky sub-themes. (Thid theme is not required; but, AT Sky worked well in a mobile environment.
 
-- Install the Link module and enable.
-
-- Install the WYSIWYG module and enable it.
+- Install the WYSIWYG module and enable it. The Wysiwyg editor  is not required; but, it does make it a better experience for the recommendlate creator.
 
 - Recommendlates
 	- Create rcmd subdirectory in default/files 
