@@ -6,20 +6,6 @@
  *
  */
 
-/**
- * Implements hook_install().
- *
- * - Add the body field.
- * - Configure the body field.
- * - Create export, course number, and image fields.
- * - Create export, course number, and image instances.
- *
- * @see node_type_set_defaults()
- * @see field_info_instance()
- * @see field_update_instance()
- * @see field_create_field()
- * @see field_create_instance()
- */
 function recommends_rcmd_install() {
   // use get_t() to get the name of our localization function for translation
   // during install, when t() is not available.
@@ -61,81 +47,8 @@ function recommends_rcmd_install() {
   // http://api.drupal.org/api/function/field_update_instance/7
   field_update_instance($body_instance);
 
-  // Create all the fields we are adding to our content type.
-  // http://api.drupal.org/api/function/field_create_field/7
-/*
-  foreach (_recommends_rcmd_installed_fields() as $field) {
-    field_create_field($field);
-  }
-*/
-/*
-  // Create all the instances for our fields.
-  // http://api.drupal.org/api/function/field_create_instance/7
-  foreach (_recommends_rcmd_installed_instances() as $instance) {
-    $instance['entity_type'] = 'node';
-    $instance['bundle'] = $recommendlate['type'];
-    field_create_instance($instance);
-  }
-*/
 }
 
-/**
- * Return a structured array defining the fields created by this content type.
- *
- * This is packaged in a function so it can be used in both
- * recommends_rcmd_install() and recommends_rcmd_uninstall().
- 
-function _recommends_rcmd_installed_fields() {
-  $t = get_t();
-  return array(
- 'recommends_rcmd_export' => array(
-      'field_name' => 'recommends_rcmd_export',
-      'cardinality' => 1,
-      'type'        => 'text',
-      'settings'    => array(
-        'max_length' => 60,
-      ),
-    ),
-  );
-}
-*/
-/**
- * Return a structured array defining the instances for this content type.
- *
- * The instance lets Drupal know which widget to use to allow the user to enter
- * data and how to react in different view modes.  We are going to display a
- * page that uses a custom "recommends_rcmd_list" view mode.  We will set a
- * cardinality of three allowing our content type to give the user three export
- * fields.
- *
- * This is provided as a function so that it can be used in both hook_install()
- * and hook_uninstall().
-  
-function _recommends_rcmd_installed_instances() {
-  $t = get_t();
-  return array(
-    'recommends_rcmd_export' => array(
-      'field_name' => 'recommends_rcmd_export',
-      'label'       => $t('Export file'),
-      'widget'      => array(
-        'type'    => 'text_textfield',
-      ),
-      'display' => array(
-        'recommendlate_node_list' => array(
-          'label' => 'hidden',
-          'type' => 'recommends_rcmd_exports',
-        ),
-      ),
-    ),   
-   
-  );
-}
-
-*/
-/**
- * Implements hook_uninstall().
- *
- */
 function recommends_rcmd_uninstall() {
   // Gather all the recommendlate content that might have been created while this
   // module was enabled.  Simple selects still use db_query().
@@ -151,14 +64,7 @@ function recommends_rcmd_uninstall() {
   // http://api.drupal.org/api/function/node_delete_multiple/7
   node_delete_multiple($nids);
 
-  // Loop over each of the fields defined by this module and delete
-  // all instances of the field, their data, and the field itself.
-  // http://api.drupal.org/api/function/field_delete_field/7
-  /*
-  foreach (array_keys(_recommends_rcmd_installed_fields()) as $field) {
-    field_delete_field($field);
-  }
-*/
+  
   // Loop over any remaining field instances attached to the recommendlate
   // content type (such as the body field) and delete them individually.
   // http://api.drupal.org/api/function/field_delete_field/7

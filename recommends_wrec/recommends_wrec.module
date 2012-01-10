@@ -30,11 +30,6 @@ function recommends_wrec_help($path) {
   return $output;
 }
 
-/**
- * Implements hook_menu().
- *
- * Set up calls to drupal_get_form() for all our example cases.
- */
 function recommends_wrec_menu() {
   $items = array();
 

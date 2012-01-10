@@ -58,13 +58,9 @@ switch (substr($flags,2,1)) {
         variable_set('recommends_req_student_email', $altemail);
         break;
   }
-
-
-
-
 /**
  * Return the list of steps and their associated forms. This has been separated
- * to clarify and easy the understanding of this example. You should edit this
+ * to clarify and easy the understanding. You should edit this
  * function to include the steps your wizard/multistep form requires.
  *
  * @return $array
@@ -241,20 +237,6 @@ if ($form_state['step'] == 1) {
   }
 }
 
-// The previous code was a 'skeleton' of a multistep wizard form. You are not
-// required to change a line on the previous code (apart from defining your own
-// steps in the _recommends_req_steps() function.
-//
-// All the code included from here is the content of the wizard, the steps of
-// the form.
-
-// First, let's show the defined steps for the wizard example.
-
-/**
- * Returns form elements for the 'student info' page of the wizard. This is the
- * first step of the wizard, asking for two textfields: first name and last
- * name.
- */
 function recommends_req_addschools_student_info($form, &$form_state) {
   $form = array();
   $form['student'] = array(
@@ -594,21 +576,6 @@ function recommends_req_addschools_verification($form, &$form_state) {
   return $form;
 }
 
-
-
-// And now comes the magic of the wizard, the function that should handle all the
-// inputs from the user on each different step.
-/**
- * Wizard form submit handler.
- * - Saves away $form_state['values']
- * - Process all the form values.
- *
- * This demonstration handler just do a drupal_set_message() with the information
- * collected on each different step of the wizard.
- *
- * @param unknown_type $form
- * @param unknown_type $form_state
- */
 function recommends_req_addschools_submit($form, &$form_state) {
 
   $current_step = &$form_state['step'];
@@ -858,12 +825,7 @@ function email_mail_send($email_values) {
 
   // Specify 'to' and 'from' addresses.
   
-  $to = $email_values['email'];
-  
-/*  
-  $from = variable_get('site_mail', 'admin@example.com');
-  $from = "bailey@clayton.edu";
-*/ 
+  $to = $email_values['email']; 
   
   $from = variable_get('recommends_professor_email','bailey@clayton.edu');
   
@@ -945,9 +907,7 @@ function email_mail_send($email_values) {
  * the outgoing email is one possibility.
  */
 function email_mail_alter(&$message) {
-  // For the purpose of this example, modify all the outgoing messages and
-  // attach a site signature. The signature will be translated to the language
-  // in which message was built.
+  
   $options = array(
     'langcode' => $message['language']->language,
   );

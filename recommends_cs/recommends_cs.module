@@ -233,11 +233,6 @@ function recommends_cs_help($path) {
   return $output;
 }
 
-/**
- * Implements hook_menu().
- *
- * Set up calls to drupal_get_form() for all our example cases.
- */
 function recommends_cs_menu() {
   $items = array();
 

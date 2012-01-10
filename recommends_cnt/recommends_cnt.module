@@ -164,11 +164,6 @@ function recommends_cnt_help($path) {
   return $output;
 }
 
-/**
- * Implements hook_menu().
- *
- * Set up calls to drupal_get_form() for all our example cases.
- */
 function recommends_cnt_menu() {
   $items = array();
 

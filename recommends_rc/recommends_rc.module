@@ -386,11 +386,6 @@ function recommends_rc_help($path) {
   return $output;
 }
 
-/**
- * Implements hook_menu().
- *
- * Set up calls to drupal_get_form() for all our example cases.
- */
 function recommends_rc_menu() {
   $items = array();
 
@@ -442,18 +437,7 @@ function recommends_rc_menu() {
     'type' => MENU_LOCAL_TASK,
     'access callback' => TRUE,
     'weight' => -7,
-  );
-  
-/*
-  $items['recommendations/recmd_rc/schools/due'] = array(
-    'title' => 'Due',
-    'page callback' => 'recommends_rc_list_due',
-    'type' => MENU_LOCAL_TASK,
-    'menu_name' => 'navigation',
-    'weight' => -6,
-    'access callback' => TRUE,
-  );
-*/  
+  ); 
 
   return $items;
 }

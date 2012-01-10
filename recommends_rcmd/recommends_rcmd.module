@@ -371,60 +371,6 @@ $c3 = '" href="?q=recommendations/recmd_wrec/assist/gammaepsilon@demo.edu/Epsilo
   
 }
 
-/***********Used to create export file *************************
-* When the save is depressed ti save the node, this hooj is
-* invoked.
-**********************************************************
-function recommends_rcmd_node_presave($node) {
-
-  $nid = $node->nid;
-  $title = $node->title;
-  $data = $node->body['und'][0]['value']; 
-
-$wktitle = str_replace( " ", "-", $title);
-  
-  
-  if (variable_get('recommends_rcmd_type') == 'T') {
-   $destination = 'public://' . variable_get('recommends_professor') .   '/rcmdfiles/' . $wktitle . '.txt';
-   $wktitle = $wktitle . '.txt';
-   } else {
-		$destination = 'public://' . variable_get('recommends_professor') . '/rcmdfiles/' . $wktitle . '.tex';
-		$wktitle = $wktitle . '.tex';
-  }
-
-  // With all traditional PHP functions we can use the stream wrapper notation
-  // for a file as well.
-  
-  
-  $fp = fopen($destination, 'w');
-
-  // To demonstrate the fact that everything is based on streams, we'll do
-  // multiple 5-character writes to put this to the file. We could easily
-  // (and far more conveniently) write it in a single statement with
-  // fwrite($fp, $data).
-  $length = strlen($data);
-  $write_size = $length;
-  
-    $result = fwrite($fp, substr($data, 0, $write_size));
-    
-    if ($result == FALSE) {
-      drupal_set_message(t('Failed writing to the file; '), 'error');
-      fclose($fp);
-      return;
-    }
-  
-  $url = file_create_url($destination);
-  $_SESSION['write_file'] = $destination;
- 
-  
-  
-  variable_set('recommendlate_export_path','public://');
-  
-  variable_set('recommendlate_export_file', 'rcmdfiles/' . variable_get('recommends_professor') . '/' . $wktitle);
-  
-}
-
-*/
 
 
 

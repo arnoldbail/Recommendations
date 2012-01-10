@@ -70,12 +70,9 @@ switch (substr($flags,NOTIFY_STUDENT,1)) {
         break;
   }
 
-
-
-
 /**
  * Return the list of steps and their associated forms. This has been separated
- * to clarify and easy the understanding of this example. You should edit this
+ * to clarify and easy the understanding of this module. You should edit this
  * function to include the steps your wizard/multistep form requires.
  *
  * @return $array
@@ -116,22 +113,6 @@ function recommends_req_wizard($form, &$form_state) {
   // form elements to display for this step.
   $form = $form_state['step_information'][$step]['form']($form, $form_state);
 
-  // Show the 'previous' button if appropriate. Note that #submit is set to
-  // a special submit handler, and that we use #limit_validation_errors to
-  // skip all complaints about validation when using the back button. The
-  // values entered will be discarded, but they will not be validated, which
-  // would be annoying in a "back" button.
-/*  
-  if ($step > 1) {
-    $form['prev'] = array(
-      '#type' => 'submit',
-      '#value' => t('Previous'),
-      '#name' => 'prev',
-      '#submit' => array('recommends_req_wizard_previous_submit'),
-      '#limit_validation_errors' => array(),
-    );
-  }
-*/
 
   // Show the Next button only if there are more steps defined.
   if ($step < count($form_state['step_information'])) {
@@ -1083,37 +1064,7 @@ $msg = "HELP!!!";
 
 }
 
-/*********************************************************
- * Example of how to use Drupal's mail API.
- *
- * This example module provides two different examples of the Drupal email API.
- *  - defines a simple contact form and shows how to use drupal_mail()
- *
- *    to send an e-mail (defined in hook_mail()) when the form is submitted.
- *  - shows how modules can alter emails defined by other Drupal modules or
- *    Core using hook_mail_alter by attaching a custom signature before
- *    they are sent.
- */
 
-/**
- * Implement hook_mail().
- *
- * This hook defines a list of possible e-mail templates that this module can
- * send. Each e-mail is given a unique identifier, or 'key'.
- *
- * $message comes in with some standard properties already set: 'to' address,
- * 'from' address, and a set of default 'headers' from drupal_mail(). The goal
- * of hook_mail() is to set the message's 'subject' and 'body' properties, as
- * well as make any adjustments to the headers that are necessary.
- *
- * The $params argument is an array which can hold any additional data required
- * to build the mail subject and body; for example, user-entered form data, or
- * some context information as to where the mail request came from.
- *
- * Note that hook_mail() is not actually a hook. It is only called for a single
- * module, the module named in the first argument of drupal_mail(). So it's
- * a callback of a type, but not a hook.
- */
 function recommends_req_mail($key, &$message, $params) {
   global $user;
 
@@ -1237,7 +1188,6 @@ function email_mail_send($email_values) {
     }
  }
 }
-/////////////////////////////////////////////
 /*************************************************************
 *     AJAX Handler for courses conducted by professor
 **************************************************************/
@@ -1252,7 +1202,6 @@ function recommends_req_form_courses_callback($form, $form_state) {
   }
   return $form;
 }
-///////////////////////////////////////////////////////
 
 /**
  * Implement hook_mail_alter().
@@ -1265,14 +1214,14 @@ function recommends_req_form_courses_callback($form, $form_state) {
  * the outgoing email is one possibility.
  */
 function email_mail_alter(&$message) {
-  // For the purpose of this example, modify all the outgoing messages and
+  // For the purpose of this routine, modify all the outgoing messages and
   // attach a site signature. The signature will be translated to the language
   // in which message was built.
   $options = array(
     'langcode' => $message['language']->language,
   );
 
-  $signature = t("\n--\nMail altered by email_example module.", array(), $options);
+  $signature = t("\n--\nMail altered by req_wizard module.", array(), $options);
   if (is_array($message['body'])) {
     $message['body'][] = $signature;
   }
